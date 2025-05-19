@@ -1,0 +1,13 @@
+# Native build artifacts
+native/**/build/
+native/**/bin/
+native/**/obj/
+native/**/dist/
+native/**/CMakeFiles/
+native/**/CMakeCache.txt
+
+# Unity package build cache
+brt-unity-package/PackagesCache/
+
+# Ignore platform-specific stuff
+.DS_Store

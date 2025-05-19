@@ -1,0 +1,12 @@
+{
+  "name": "co.uk.reactify.brt-unity",
+  "displayName": "BRT-Unity",
+  "version": "0.9.0",
+  "samples": [
+    {
+      "displayName": "BRT-Unity Sample",
+      "description": "A sample scene for the Binaural Rendering Toolkit package.",
+      "path": "Samples~/BRT_Example"
+    }
+  ]
+}
