@@ -2,25 +2,23 @@ using UnityEditor;
 using UnityEngine;
 using System.IO;
 
+[InitializeOnLoad]
 public static class AutoImportSample
 {
     // This static constructor runs when the project is loaded or when scripts are recompiled
     static AutoImportSample()
     {
-        // Initially, you can still use this for any automatic copy if desired
-        // To ensure it runs on project load (e.g., on Unity launch), if you prefer
-        CopySampleOnProjectLoad();
+        CopySampleProject();
     }
 
     // This menu item allows you to trigger the folder copy manually
     [MenuItem("Tools/Copy Sample From Package")]
     private static void CopySampleFromPackage()
     {
-        CopySampleOnProjectLoad();
+        CopySampleProject(true);
     }
 
-    // The logic for copying the sample folder
-    private static void CopySampleOnProjectLoad()
+    private static void CopySampleProject(bool force = false)
     {
         try
         {
@@ -36,7 +34,7 @@ public static class AutoImportSample
             Debug.Log($"[AutoImportSample] projectSamplePath: {projectSamplePath}");
 
             // Only copy if the sample doesn't already exist in the project
-            if (!Directory.Exists(projectSamplePath) && Directory.Exists(packageSamplePath))
+            if ((!Directory.Exists(projectSamplePath) && Directory.Exists(packageSamplePath)) || force)
             {
                 Debug.Log("[AutoImportSample] Copying sample from package to project...");
 
