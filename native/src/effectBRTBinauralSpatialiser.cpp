@@ -31,10 +31,19 @@ namespace BRTBinauralSpatialiser
 
 	struct EffectData
 	{
-		std::string sourceID;    // DEBUG
         std::shared_ptr<BRTSourceModel::CSourceSimpleModel> soundSource;
         CMonoBuffer<float> inMonoBuffer;
 	};
+
+    enum class SpatialiserParameter : int
+    {
+        instanceId = 0,
+    };
+
+    inline int toIndex (SpatialiserParameter param)
+    {
+        return static_cast<int> (param);
+    }
 
 	template <class T>
     void WriteLog (std::string logText, const T& value, std::string sourceID = "")
@@ -51,18 +60,18 @@ namespace BRTBinauralSpatialiser
       #endif
 	}
 
-template <class T>
-void WriteLog (UnityAudioEffectState* state, std::string logtext, const T& value)
-{
-	WriteLog (logtext, value, state->GetEffectData<EffectData>()->sourceID);
-}
+    template <class T>
+    void WriteLog (UnityAudioEffectState* state, std::string logtext, const T& value)
+    {
+        WriteLog (logtext, value, state->GetEffectData<EffectData>()->soundSource->GetID());
+    }
 
-void WriteLog (std::string logtext)
-{
-	WriteLog (logtext, "");
-}
+    void WriteLog (std::string logtext)
+    {
+        WriteLog (logtext, "");
+    }
 
-int InternalRegisterEffectDefinition(UnityAudioEffectDefinition& definition)
+int InternalRegisterEffectDefinition (UnityAudioEffectDefinition& definition)
 {
 	int numparams = FloatParameter::NumSourceParameters;
 	definition.paramdefs = new UnityAudioParameterDefinition[numparams];
@@ -155,7 +164,8 @@ Common::CTransform ComputeSourceTransformFromMatrix(float* sourceMatrix, float s
 }
 
 //==============================================================================
-static UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK DistanceAttenuationCallback(UnityAudioEffectState* state, float distanceIn, float attenuationIn, float* attenuationOut)
+static UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK
+DistanceAttenuationCallback (UnityAudioEffectState* state, float distanceIn, float attenuationIn, float* attenuationOut)
 {
 	*attenuationOut = attenuationIn;
 	return UNITY_AUDIODSP_OK;
@@ -289,23 +299,24 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK CreateCallback (UnityAudioEffectSt
     effectdata->inMonoBuffer.resize (state->dspbuffersize);
     
     // Create sound source
-    effectdata->sourceID = "SoundSource_" + std::to_string (spatializer->numSoundSources);
-    WriteLog ("BRT: Creating sound source: " + effectdata->sourceID);
+    int sourceID = spatializer->numSoundSources;
+    std::string sourceIDStr = std::to_string (sourceID);
+    WriteLog ("BRT: Creating sound source: " + sourceIDStr);
     
     {
         const BRTHelpers::ScopedManagerSetup sm (spatializer->brtManager);
         
-        effectdata->soundSource = spatializer->brtManager.CreateSoundSource<BRTSourceModel::CSourceSimpleModel> (effectdata->sourceID);
+        effectdata->soundSource = spatializer->brtManager.CreateSoundSource<BRTSourceModel::CSourceSimpleModel> (sourceIDStr);
         
         if (effectdata->soundSource == nullptr)
-            WriteLog ("BRT: Error creating sound source: " + effectdata->sourceID);
+            WriteLog ("BRT: Error creating sound source: " + sourceIDStr);
         else
             spatializer->numSoundSources++;
 
-        if (! spatializer->listenerHRTFModel->ConnectSoundSource (effectdata->sourceID))
+        if (! spatializer->listenerHRTFModel->ConnectSoundSource (sourceIDStr))
             WriteLog ("BRT: Error connecting sound source to HRTF model");
 
-        if (! spatializer->listenerBRIRModel->ConnectSoundSource (effectdata->sourceID))
+        if (! spatializer->listenerBRIRModel->ConnectSoundSource (sourceIDStr))
             WriteLog ("BRT: Error connecting sound source to BRIR model");
     }
     
@@ -350,14 +361,16 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK ReleaseCallback (UnityAudioEffectS
         
         spatializer->brtManager.BeginSetup();
         
-        if (! spatializer->listenerHRTFModel->DisconnectSoundSource (data->sourceID))
+        auto sourceID = data->soundSource->GetID();
+        
+        if (! spatializer->listenerHRTFModel->DisconnectSoundSource (sourceID))
             WriteLog ("BRT: Error disconnecting sound source from HRTF model");
 
-        if (! spatializer->listenerBRIRModel->DisconnectSoundSource (data->sourceID))
+        if (! spatializer->listenerBRIRModel->DisconnectSoundSource (sourceID))
             WriteLog ("BRT: Error disconnecting sound source from BRIR model");
         
-        if (! spatializer->brtManager.RemoveSoundSource (data->sourceID))
-            WriteLog ("BRT: Error removing sound source: " + data->sourceID);
+        if (! spatializer->brtManager.RemoveSoundSource (sourceID))
+            WriteLog ("BRT: Error removing sound source: " + sourceID);
 
         spatializer->brtManager.EndSetup();
         
@@ -366,7 +379,7 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK ReleaseCallback (UnityAudioEffectS
 	return UNITY_AUDIODSP_OK;
 }
 
-UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK SetFloatParameterCallback(UnityAudioEffectState* state, int index, float value)
+UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK SetFloatParameterCallback (UnityAudioEffectState* state, int index, float value)
 {
 	std::lock_guard<std::mutex> lock(SpatialiserCore::mutex());
 	SpatialiserCore* spatializer;
@@ -390,7 +403,7 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK GetFloatParameterCallback (UnityAu
 	SpatialiserCore* spatializer;
 	try
 	{
-		spatializer = SpatialiserCore::instance(state->samplerate, state->dspbuffersize);
+		spatializer = SpatialiserCore::instance (state->samplerate, state->dspbuffersize);
 	}
 	catch (const SpatialiserCore::IncorrectAudioStateException& e)
 	{
@@ -414,31 +427,13 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK GetFloatParameterCallback (UnityAu
 
 	if (value != NULL)
 	{
-		switch (index)
+		switch (static_cast<SpatialiserParameter> (index))
 		{
-		case FloatParameter::EnableHRTFInterpolation:
-//			*value = (float) source->IsInterpolationEnabled();
-			break;
-		case FloatParameter::EnableFarDistanceLPF:
-//			*value = (float)source->IsFarDistanceEffectEnabled();
-			break;
-		case FloatParameter::EnableDistanceAttenuationAnechoic:
-//			*value = (float)source->IsDistanceAttenuationEnabledAnechoic();
-			break;
-		case FloatParameter::EnableNearFieldEffect:
-//			*value = (float)source->IsNearFieldEffectEnabled();
-			break;
-		case FloatParameter::SpatializationMode:
-//			*value = (float)source->GetSpatializationMode();
-			break;
-		case FloatParameter::EnableReverbSend:
-//			*value = (float)source->IsReverbProcessEnabled();
-			break;
-		case FloatParameter::EnableDistanceAttenuationReverb:
-//			*value = (float)source->IsDistanceAttenuationEnabledReverb();
-			break;
-		default:
-			return UNITY_AUDIODSP_ERR_UNSUPPORTED;
+            case SpatialiserParameter::instanceId:
+                *value = (float) std::stoi (data->soundSource->GetID());
+                break;
+            default:
+                return UNITY_AUDIODSP_ERR_UNSUPPORTED;
 		}
 	}
 	return UNITY_AUDIODSP_OK;
