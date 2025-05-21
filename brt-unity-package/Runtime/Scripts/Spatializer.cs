@@ -149,30 +149,13 @@ namespace API_3DTI
 
         /// Array is for the three different sample rates
         [SerializeField]
-        private string[] highQualityHRTFPaths =
-        {
-        "Assets/3DTuneIn/Resources/Data/HighQuality/HRTF/3DTI_HRTF_IRC1032_256s_44100Hz.3dti-hrtf.bytes",
-        "Assets/3DTuneIn/Resources/Data/HighQuality/HRTF/3DTI_HRTF_IRC1032_256s_48000Hz.3dti-hrtf.bytes",
-        "Assets/3DTuneIn/Resources/Data/HighQuality/HRTF/3DTI_HRTF_IRC1032_256s_96000Hz.3dti-hrtf.bytes",
-    };
+        private string[] highQualityHRTFPaths = {};
         [SerializeField]
-        private string[] highQualityILDPaths = {
-        "Assets/3DTuneIn/Resources/Data/HighQuality/ILD/NearFieldCompensation_ILD_44100.sofa.bytes",
-        "Assets/3DTuneIn/Resources/Data/HighQuality/ILD/NearFieldCompensation_ILD_48000.sofa.bytes",
-        "Assets/3DTuneIn/Resources/Data/HighQuality/ILD/NearFieldCompensation_ILD_96000.sofa.bytes",
-    };
+        private string[] highQualityILDPaths = {};
         [SerializeField]
-        private string[] highPerformanceILDPaths = {
-        "Assets/3DTuneIn/Resources/Data/HighPerformance/ILD/HRTF_ILD_44100.3dti-ild.bytes",
-        "Assets/3DTuneIn/Resources/Data/HighPerformance/ILD/HRTF_ILD_48000.3dti-ild.bytes",
-        "Assets/3DTuneIn/Resources/Data/HighPerformance/ILD/HRTF_ILD_96000.3dti-ild.bytes",
-    };
+        private string[] highPerformanceILDPaths = {};
         [SerializeField]
-        private string[] reverbBRIRPaths = {
-        "Assets/3DTuneIn/Resources/Data/Reverb/BRIR/3DTI_BRIR_large_44100.3dti-brir.bytes",
-        "Assets/3DTuneIn/Resources/Data/Reverb/BRIR/3DTI_BRIR_large_48000.3dti-brir.bytes",
-        "Assets/3DTuneIn/Resources/Data/Reverb/BRIR/3DTI_BRIR_large_96000.3dti-brir.bytes",
-    };
+        private string[] reverbBRIRPaths = {};
 
 
         // for convenience

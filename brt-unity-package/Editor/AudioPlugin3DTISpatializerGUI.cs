@@ -197,13 +197,13 @@ namespace API_3DTI
                     prefix = "Data/HighPerformance/ILD/";
                     break;
                 case BinaryResourceRole.HighQualityHRTF:
-                    prefix = "Data/HighQuality/HRTF/";
+                    prefix = "Data/HRTF/";
                     break;
                 case BinaryResourceRole.HighQualityILD:
-                    prefix = "Data/HighQuality/ILD/";
+                    prefix = "Data/ILD/";
                     break;
                 case BinaryResourceRole.ReverbBRIR:
-                    prefix = "Data/Reverb/BRIR/";
+                    prefix = "Data/BRIR/";
                     break;
                 default:
                     throw new Exception("Invalid value for BinaryResourceRole.");
