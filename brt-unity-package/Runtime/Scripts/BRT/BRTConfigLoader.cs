@@ -5,19 +5,28 @@ namespace BRT
     public class BRTConfigurationLoader : MonoBehaviour
     {
         public static BRTConfigurationLoader Instance { get; private set; }
+
         public BRTConfiguration configuration;
 
         private void Awake()
         {
             if (Instance != null && Instance != this)
             {
-                Debug.LogError("[BRTConfigurationLoader] Multiple instances detected. Only one is allowed.");
                 Destroy(gameObject);
                 return;
             }
 
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
+
+    #if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (!Application.isPlaying)
+                Instance = this;
+        }
+    #endif
 
         private void Start()
         {

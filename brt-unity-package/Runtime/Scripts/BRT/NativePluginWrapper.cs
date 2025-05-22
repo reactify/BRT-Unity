@@ -15,5 +15,15 @@ namespace BRT
             Debug.Log($"[Plugin] LoadBRIR: {virtualPath}");
             // TODO: Native call
         }
+
+        public static void SetHrtfResource(int instanceId, string sofaFile)
+        {
+            Debug.Log($"[Plugin] SetHrtfResource: {instanceId} {sofaFile}");
+        }
+
+        public static void SetBrirResource(int instanceId, string sofaFile)
+        {
+            Debug.Log($"[Plugin] SetBrirResource: {instanceId} {sofaFile}");
+        }
     }
 }
