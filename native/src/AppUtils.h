@@ -96,3 +96,19 @@ private:
 
 };
 #endif
+
+
+template <class T>
+void WriteLog (std::string logText, const T& value, std::string sourceID = "")
+{
+  #ifdef DEBUG_LOG_CATx
+    std::ostringstream os;
+    os << logtext << value;
+    string fulltext = os.str();
+    __android_log_print(ANDROID_LOG_DEBUG, "BRT", fulltext.c_str());
+  #else
+    std::cerr << logText << " " << value;
+    std::cerr << " (source " << sourceID << ")";
+    std::cerr << std::endl;
+  #endif
+}

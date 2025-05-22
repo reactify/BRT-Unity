@@ -3,6 +3,7 @@
 **/
 
 #include "SpatialiserCore.h"
+#include "AppUtils.h"
 
 // DEBUG LOG 
 #ifdef UNITY_ANDROID
@@ -25,51 +26,26 @@
 #error "_3DTI_ANGLE_CONVENTION_LISTEN is not defined!"
 #endif
 
-namespace BRTBinauralSpatialiser
+namespace BRTSpatializer
 {
-	using namespace BRTSpatialiserCore;
 
-	struct EffectData
-	{
-        std::shared_ptr<BRTSourceModel::CSourceSimpleModel> soundSource;
-        CMonoBuffer<float> inMonoBuffer;
-	};
+using namespace BRTSpatialiserCore;
 
-    enum class SpatialiserParameter : int
-    {
-        instanceId = 0,
-    };
+struct EffectData
+{
+    std::shared_ptr<BRTSourceModel::CSourceModelBase> soundSource;
+    CMonoBuffer<float> inMonoBuffer;
+};
 
-    inline int toIndex (SpatialiserParameter param)
-    {
-        return static_cast<int> (param);
-    }
+enum class SpatialiserParameter : int
+{
+    instanceId = 0,
+};
 
-	template <class T>
-    void WriteLog (std::string logText, const T& value, std::string sourceID = "")
-	{
-      #ifdef DEBUG_LOG_CATx
-        std::ostringstream os;
-        os << logtext << value;
-        string fulltext = os.str();
-        __android_log_print(ANDROID_LOG_DEBUG, "BRT", fulltext.c_str());
-	  #else
-        std::cerr << logText << " " << value;
-        std::cerr << " (source " << sourceID << ")";
-        std::cerr << std::endl;
-      #endif
-	}
-
-    template <class T>
-    void WriteLog (UnityAudioEffectState* state, std::string logtext, const T& value)
-    {
-        WriteLog (logtext, value, state->GetEffectData<EffectData>()->soundSource->GetID());
-    }
-
-    void WriteLog (std::string logtext)
-    {
-        WriteLog (logtext, "");
-    }
+inline int toIndex (SpatialiserParameter param)
+{
+    return static_cast<int> (param);
+}
 
 int InternalRegisterEffectDefinition (UnityAudioEffectDefinition& definition)
 {
@@ -195,7 +171,7 @@ UNITY_AUDIODSP_RESULT SetFloatParameter (SpatialiserCore* spatializer, UnityAudi
         if (value > 0.0f)
         {
 //            data->audioSource->EnableFarDistanceEffect();
-            WriteLog(state, "SET PARAMETER: Far distance LPF is ", "Enabled");
+            WriteLog ("SET PARAMETER: Far distance LPF is ", "Enabled");
         }
         else
         {
@@ -264,7 +240,7 @@ UNITY_AUDIODSP_RESULT SetFloatParameter (SpatialiserCore* spatializer, UnityAudi
         }
 //        break;
     default:
-        WriteLog (state, "SET PARAMETER: ERROR!!!! Unknown float parameter received from API: ", index);
+        WriteLog ("SET PARAMETER: ERROR!!!! Unknown float parameter received from API: ", index);
         return UNITY_AUDIODSP_ERR_UNSUPPORTED;
     }
 
@@ -287,7 +263,7 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK CreateCallback (UnityAudioEffectSt
 	}
 	catch (const SpatialiserCore::IncorrectAudioStateException& e)
 	{
-		WriteLog(std::string("Error: Spatialiser CreateCallback called with incorrect audio state. ") + e.what());
+		WriteLog (std::string("Error: Spatialiser CreateCallback called with incorrect audio state. ") + e.what());
 		return UNITY_AUDIODSP_ERR_UNSUPPORTED;
 	}
     
@@ -343,7 +319,7 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK CreateCallback (UnityAudioEffectSt
 
 UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK ReleaseCallback (UnityAudioEffectState* state)
 {
-	WriteLog (state, "Releasing audio plugin...", "");
+    WriteLog ("Releasing audio plugin...", "", state->GetEffectData<EffectData>()->soundSource->GetID());
     
 	if (EffectData* data = state->GetEffectData<EffectData>())
     {
@@ -461,22 +437,22 @@ ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer
 		return UNITY_AUDIODSP_ERR_UNSUPPORTED;
 	}
 
+    EffectData* data = state->GetEffectData<EffectData>();
+    
 	// Check that I/O formats are right and that the host API supports this feature
 	if (inchannels != 2 || outchannels != 2 ||
 		!IsHostCompatible(state) || state->spatializerdata == NULL)
 	{
-		WriteLog(state, "PROCESS: ERROR!!!! Wrong number of channels or Host is not compatible:", "");
-		WriteLog(state, "         Input channels = ", inchannels);
-		WriteLog(state, "         Output channels = ", outchannels);
-		WriteLog(state, "         Host compatible = ", IsHostCompatible(state));
-		WriteLog(state, "         Spatializer data exists = ", (state->spatializerdata != NULL));
-		WriteLog(state, "         Buffer length = ", length);
+		WriteLog ("PROCESS: ERROR!!!! Wrong number of channels or Host is not compatible:", "", data->soundSource->GetID());
+		WriteLog ("         Input channels = ", inchannels, data->soundSource->GetID());
+		WriteLog ("         Output channels = ", outchannels, data->soundSource->GetID());
+		WriteLog ("         Host compatible = ", IsHostCompatible (state), data->soundSource->GetID());
+		WriteLog ("         Spatializer data exists = ", (state->spatializerdata != NULL), data->soundSource->GetID());
+		WriteLog ("         Buffer length = ", length, data->soundSource->GetID());
 		// Return silence on error.
-		std::fill(outbuffer, outbuffer + length * (size_t)outchannels, 0.0f);
+		std::fill (outbuffer, outbuffer + length * (size_t)outchannels, 0.0f);
 		return UNITY_AUDIODSP_OK;
 	}
-
-	EffectData* data = state->GetEffectData<EffectData>();
 
 	  // Set source and listener transform
     data->soundSource->SetSourceTransform (ComputeSourceTransformFromMatrix (state->spatializerdata->sourcematrix, spatializer->scaleFactor));
