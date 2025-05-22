@@ -19,3 +19,8 @@ MonoBehaviour:
     delayForm: 0
   brirResources:
   - sofaFile: BRIR_Trapezoid_48000Hz.sofa
+  directivityResources:
+  - sofaFile: Cardioid_LP_30dB_256s_resampled10.sofa
+    spatialResolution: 5
+  nfcFilterResources:
+  - sofaFile: EarMuffFilter_48Khz.sofa
