@@ -32,14 +32,23 @@ namespace BRT
         {
             foreach (var hrtf in configuration.hrtfResources)
             {
-                string virtualPath = BRTConfiguration.HRTFResourceFolder + hrtf.sofaFile;
-                NativePluginWrapper.LoadHRTF(virtualPath);
+                string filePath = BRTConfiguration.HRTFResourceFolder + hrtf.sofaFile;
+                if (ResourceExtractor.ExtractToPersistentDataPath(filePath, filePath, out string fullPath))
+                {
+                    Debug.Log("File ready at: " + fullPath);
+                    NativePluginWrapper.BRTSpatializerCreateHRTF(fullPath);
+                }
+                else
+                {
+                    Debug.LogError("Failed to extract SOFA file.");
+                }
+                // NativePluginWrapper.BRTSpatializerCreateListenerModel(0, configuration.hrtfResources.IndexOf(hrtf).ToString());
             }
 
             foreach (var brir in configuration.brirResources)
             {
                 string virtualPath = BRTConfiguration.BRIRResourceFolder + brir.sofaFile;
-                NativePluginWrapper.LoadBRIR(virtualPath);
+                // NativePluginWrapper.LoadBRIR(virtualPath);
             }
         }
     }

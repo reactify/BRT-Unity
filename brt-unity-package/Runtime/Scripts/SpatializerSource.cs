@@ -17,7 +17,7 @@ namespace BRT
         #if UNITY_EDITOR
             if (!Application.isPlaying && configuration == null)
             {
-                var loader = Object.FindObjectOfType<BRTConfigurationLoader>();
+                var loader = Object.FindFirstObjectByType<BRTConfigurationLoader>();
                 if (loader != null)
                     configuration = loader.configuration;
             }

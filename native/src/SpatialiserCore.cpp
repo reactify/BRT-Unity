@@ -9,6 +9,22 @@ namespace BRTSpatialiserCore
         std::cerr << logText << std::endl;
     }
 
+    typedef void(*ErrorCallback)(const char*);
+
+    ErrorCallback g_errorCallback = nullptr;
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API
+    void SetErrorCallback (ErrorCallback cb)
+    {
+        g_errorCallback = cb;
+    }
+
+    void RaiseError (const char* msg)
+    {
+        if (g_errorCallback)
+            g_errorCallback (msg);
+    }
+
 	extern "C" UNITY_AUDIODSP_EXPORT_API
     bool BRTSpatialiserResetIfNeeded (int sampleRate, int dspBufferSize)
 	{
@@ -20,16 +36,44 @@ namespace BRTSpatialiserCore
 	extern "C" UNITY_AUDIODSP_EXPORT_API
     bool BRTSpatialiserLoadBinary (BinaryRole role, const char* path, int currentSampleRate, int dspBufferSize)
 	{
-		std::lock_guard<std::mutex> lock(SpatialiserCore::mutex());
+		std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
 
 		SpatialiserCore* instance = SpatialiserCore::instance(currentSampleRate, dspBufferSize);
 		if (instance == nullptr)
 		{
-			WriteLog ("Error: setup3DTISpatializer called with incorrect sample rate or buffer size.");
+			WriteLog ("BRT ERROR: Mismatching sample rate or buffer size.");
 			return false;
 		}
+        
 		return instance->loadBinary(role, path);
 	}
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API
+    bool BRTSpatializerCreateHRTF (const char* path)
+    {
+        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
+
+        SpatialiserCore* instance = SpatialiserCore::instance();
+        if (instance == nullptr)
+        {
+            WriteLog ("BRT ERROR: No spatialiser instance found.");
+            return false;
+        }
+        
+        WriteLog ("BRT: Creating HRTF from path " + std::string (path));
+        auto hrtf = std::make_shared<BRTServices::CHRTF>();
+        bool sofaHRTFLoaded = AppUtils::LoadHRTFSofaFile (path, hrtf);
+        
+        if (sofaHRTFLoaded)
+        {
+            WriteLog ("BRT: SOFA HRTF created");
+            return true;
+        }
+        
+        RaiseError ("Error creating HRTF");
+        
+        return false;
+    }
 
 	extern "C" UNITY_AUDIODSP_EXPORT_API
     bool BRTSpatialiserSetFloat (int parameter, float value)
