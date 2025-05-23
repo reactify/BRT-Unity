@@ -24,3 +24,15 @@ MonoBehaviour:
     spatialResolution: 5
   nfcFilterResources:
   - sofaFile: EarMuffFilter_48Khz.sofa
+  - sofaFile: NearFieldCompensation_ILD_1.2m_48Khz.sofa
+  listenerModels:
+  - ListenerID: Listener_0
+    ModelID: Direct_Path
+    HRTFResourceIndex: 0
+    NFCResourceIndex: 1
+    Enabled: 1
+    Spatialize: 1
+    Interpolation: 1
+    ITD: 0
+    ParallaxCorrection: 0
+    NearFieldEffect: 0
