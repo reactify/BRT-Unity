@@ -224,7 +224,7 @@ namespace API_3DTI
                 {
                     if (!BRTSpatialiserSetFloat(i, spatializerParameters[i]))
                     {
-                        Debug.LogError($"Failed to set 3DTI parameter {i}.", this);
+                        Debug.Log($"Failed to set 3DTI parameter {i}.", this);
                     }
                 }
                 isInitialized = true;
@@ -241,7 +241,7 @@ namespace API_3DTI
                 {
                     if (!BRTSpatialiserSetFloat(i, spatializerParameters[i]))
                     {
-                        Debug.LogError($"Failed to set 3DTI parameter {i}.", this);
+                        Debug.Log($"Failed to set 3DTI parameter {i}.", this);
                     }
                 }
                 sendAllBinaryResourcePathsToPlugin();

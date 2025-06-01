@@ -26,7 +26,7 @@ namespace BRT
 
         private static void OnError(string msg)
         {
-            UnityEngine.Debug.LogError("[BRT NATIVE] " + msg);
+            Debug.Log("[BRT NATIVE] " + msg);
         }
 
         public static void LoadHRTF(string virtualPath)
@@ -39,16 +39,6 @@ namespace BRT
         {
             Debug.Log($"[Plugin] LoadBRIR: {virtualPath}");
             // TODO: Native call
-        }
-
-        public static void SetHrtfResource(int instanceId, string sofaFile)
-        {
-            Debug.Log($"[Plugin] SetHrtfResource: {instanceId} {sofaFile}");
-        }
-
-        public static void SetBrirResource(int instanceId, string sofaFile)
-        {
-            Debug.Log($"[Plugin] SetBrirResource: {instanceId} {sofaFile}");
         }
 
         [DllImport(DLL_NAME)]
