@@ -38,7 +38,7 @@ namespace BRTSpatialiserCore
 	{
 		std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
 
-		SpatialiserCore* instance = SpatialiserCore::instance(currentSampleRate, dspBufferSize);
+		SpatialiserCore* instance = SpatialiserCore::instance (currentSampleRate, dspBufferSize);
 		if (instance == nullptr)
 		{
 			WriteLog ("BRT ERROR: Mismatching sample rate or buffer size.");
@@ -47,33 +47,6 @@ namespace BRTSpatialiserCore
         
 		return instance->loadBinary(role, path);
 	}
-
-    extern "C" UNITY_AUDIODSP_EXPORT_API
-    bool BRTSpatializerCreateHRTF (const char* path)
-    {
-        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
-
-        SpatialiserCore* instance = SpatialiserCore::instance();
-        if (instance == nullptr)
-        {
-            WriteLog ("BRT ERROR: No spatialiser instance found.");
-            return false;
-        }
-        
-        WriteLog ("BRT: Creating HRTF from path " + std::string (path));
-        auto hrtf = std::make_shared<BRTServices::CHRTF>();
-        bool sofaHRTFLoaded = AppUtils::LoadHRTFSofaFile (path, hrtf);
-        
-        if (sofaHRTFLoaded)
-        {
-            WriteLog ("BRT: SOFA HRTF created");
-            return true;
-        }
-        
-        RaiseError ("Error creating HRTF");
-        
-        return false;
-    }
 
 	extern "C" UNITY_AUDIODSP_EXPORT_API
     bool BRTSpatialiserSetFloat (int parameter, float value)
@@ -100,10 +73,282 @@ namespace BRTSpatialiserCore
 		return spatializer->GetFloat(parameter, value);
 	}
 
-    const std::string LISTENER_ID = "listener1";
-    const std::string LISTENER_HRTF_MODEL_ID = "listenerHRTF";
-    const std::string LISTENER_BRIR_MODEL_ID = "listenerAmbisonicBRIR";
-    const std::string SOUND_SOURCE_ID = "soundSource";
+    extern "C" UNITY_AUDIODSP_EXPORT_API
+    bool BRTSpatializerCreateListener (const char* listenerId)
+    {
+        WriteLog ("BRT: Creating Listener: " +  std::string (listenerId));
+        
+        std::lock_guard<std::mutex> lock( SpatialiserCore::mutex());
+
+        SpatialiserCore* instance = SpatialiserCore::instance();
+        if (instance == nullptr)
+        {
+            RaiseError ("[BRTSpatializerCreateListener]: No Spatializer exists");
+            return false;
+        }
+        
+        auto& brtManager = instance->brtManager;
+        const BRTHelpers::ScopedManagerSetup sm (brtManager);
+        
+        if (auto listener = brtManager.CreateListener<BRTBase::CListener> (listenerId))
+        {
+            instance->listener = listener;
+            return true;
+        }
+        
+        return false;
+    }
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API
+    bool BRTSpatializerCreateListenerModel (int type, const char* listenerModelId)
+    {
+        WriteLog ("BRT: Creating Listener Model: " +  std::string (listenerModelId));
+        
+        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
+
+        SpatialiserCore* instance = SpatialiserCore::instance();
+        if (instance == nullptr)
+        {
+            WriteLog ("BRT Error: No spatializer instance found");
+            return false;
+        }
+        
+        auto& brtManager = instance->brtManager;
+        
+        const BRTHelpers::ScopedManagerSetup sm (brtManager);
+        
+        using namespace BRTListenerModel;
+        std::shared_ptr<CListenerModelBase> listenerModel = nullptr;
+        
+        switch (type)
+        {
+            case 0:
+                listenerModel = brtManager.CreateListenerModel<CListenerHRTFModel> (listenerModelId);
+                break;
+            case 1:
+                listenerModel = brtManager.CreateListenerModel<CListenerAmbisonicEnvironmentBRIRModel> (listenerModelId);
+            default:
+                listenerModel = brtManager.CreateListenerModel<CListenerHRTFModel> (listenerModelId);
+                break;
+        }
+        
+        if (listenerModel == nullptr)
+        {
+            WriteLog ("BRT: Error creating listener model");
+            return false;
+        }
+        
+        return true;
+    }
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API
+    bool BRTSpatializerConnectListenerModel (const char* listenerId, const char* listenerModelId)
+    {
+        WriteLog ("BRT: Connecting Listener Model: " +  std::string (listenerModelId) + " to listener: " + std::string (listenerId));
+        
+        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
+
+        SpatialiserCore* instance = SpatialiserCore::instance();
+        if (instance == nullptr)
+        {
+            RaiseError ("BRT Error: No spatializer instance found");
+            return false;
+        }
+        
+        auto& brtManager = instance->brtManager;
+        
+        if (auto listener = brtManager.GetListener (listenerId))
+        {
+            const BRTHelpers::ScopedManagerSetup sm (brtManager);
+            
+            if (! listener->ConnectListenerModel (listenerModelId))
+            {
+                RaiseError ("BRT: Error connecting listener model");
+                return false;
+            }
+            
+            WriteLog ("Connected listener model " + std::string (listenerModelId));
+            
+            return true;
+        }
+        
+        RaiseError ("BRT: No listener found");
+        
+        return false;
+    }
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API
+    bool BRTSpatializerLoadHRTF (const char* hrtfFile) // TODO: return index?
+    {
+        WriteLog ("BRT: Creating HRTF " +  std::string (hrtfFile));
+        
+        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
+
+        SpatialiserCore* instance = SpatialiserCore::instance();
+        if (instance == nullptr)
+        {
+            RaiseError ("BRT Error: No spatializer instance found");
+            return false;
+        }
+        
+        auto hrtf = std::make_shared<BRTServices::CHRTF>();
+        
+        if (! AppUtils::LoadHRTFSofaFile (hrtfFile, hrtf))
+        {
+            RaiseError ("BRT: Error loading SOFA HRTF");
+            return false;
+        }
+        
+        instance->hrtfs.emplace_back (hrtf);
+        
+        return true;
+    }
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API
+    bool BRTSpatializerSetHRTF (int hrtfIndex)
+    {
+        WriteLog ("BRT: Setting HRTF: " + std::to_string (hrtfIndex));
+        
+        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
+
+        SpatialiserCore* instance = SpatialiserCore::instance();
+        if (instance == nullptr)
+        {
+            WriteLog ("BRT Error: No spatializer instance found");
+            return false;
+        }
+        
+        auto& brtManager = instance->brtManager;
+        
+        if (instance->listener)
+        {
+            instance->listener->SetHRTF (instance->hrtfs[hrtfIndex]);
+            return true;
+        }
+
+        RaiseError ("Error setting HRTF");
+        
+        return false;
+    }
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API
+    bool BRTSpatializerLoadBRIR (const char* brirFile)
+    {
+        WriteLog ("BRT: Loading BRIR " +  std::string (brirFile));
+        
+        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
+
+        SpatialiserCore* instance = SpatialiserCore::instance();
+        if (instance == nullptr)
+        {
+            RaiseError ("BRT Error: No spatializer instance found");
+            return false;
+        }
+        
+        auto brir = std::make_shared<BRTServices::CHRBRIR>();
+        
+        if (! AppUtils::LoadBRIRSofaFile (brirFile, brir, 0,0,0,0))
+        {
+            RaiseError ("BRT: Error loading SOFA BRIR");
+            return false;
+        }
+        
+        instance->brirs.emplace_back (brir);
+        
+        return true;
+    }
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API
+    bool BRTSpatializerSetBRIR (int hrtfIndex)
+    {
+        WriteLog ("BRT: Setting HRTF: " + std::to_string (hrtfIndex));
+        
+        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
+
+        SpatialiserCore* instance = SpatialiserCore::instance();
+        if (instance == nullptr)
+        {
+            WriteLog ("BRT Error: No spatializer instance found");
+            return false;
+        }
+        
+        auto& brtManager = instance->brtManager;
+        
+        if (instance->listener)
+        {
+            instance->listener->SetHRBRIR (instance->brirs[hrtfIndex]);
+            return true;
+        }
+
+        RaiseError ("Error setting HRTF");
+        
+        return false;
+    }
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API
+    bool BRTSpatializerCreateSoundSource (const char* sourceId)
+    {
+        auto sourceIDStr = std::string (sourceId);
+        WriteLog ("BRT: Creating sound source: " + sourceIDStr);
+        
+        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
+
+        SpatialiserCore* instance = SpatialiserCore::instance();
+        if (instance == nullptr)
+        {
+            WriteLog ("BRT Error: No spatializer instance found");
+            return false;
+        }
+        
+        auto& brtManager = instance->brtManager;
+        const BRTHelpers::ScopedManagerSetup sm (brtManager);
+
+        auto soundSource = brtManager.CreateSoundSource<BRTSourceModel::CSourceSimpleModel> (sourceIDStr);
+
+        if (soundSource == nullptr)
+        {
+            WriteLog ("BRT: Error creating sound source: " + sourceIDStr);
+            return false;
+        }
+        
+        return true;
+    }
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API
+    bool BRTSpatializerConnectSoundSource (const char* soundSourceID, const char* listenerModelID)
+    {
+        WriteLog ("BRT: Connecting sound source: " + std::string (soundSourceID));
+        
+        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
+
+        SpatialiserCore* instance = SpatialiserCore::instance();
+        if (instance == nullptr)
+        {
+            WriteLog ("BRT Error: No spatializer instance found");
+            return false;
+        }
+        
+        auto& brtManager = instance->brtManager;
+        
+        if (instance->listener)
+        {
+            WriteLog ("BRT: Listener exists. Finding listener model: " + std::string (listenerModelID));
+            
+            const BRTHelpers::ScopedManagerSetup sm (brtManager);
+            
+            if (auto listenerModel = brtManager.GetListenerModel<BRTListenerModel::CListenerModelBase> (listenerModelID))
+            {
+                return listenerModel->ConnectSoundSource (soundSourceID);
+            }
+        }
+
+        RaiseError ("Error connecting sound source. No listener found");
+        
+        return false;
+    }
+
+    // const std::string LISTENER_BRIR_MODEL_ID = "listenerAmbisonicBRIR";
+    // const std::string SOUND_SOURCE_ID = "soundSource";
 
 	SpatialiserCore::SpatialiserCore (UInt32 sampleRate, UInt32 bufferSize)
       : scaleFactor (1.0f),
@@ -124,24 +369,6 @@ namespace BRTSpatialiserCore
         
         globalParameters.SetSampleRate (sampleRate);
         globalParameters.SetBufferSize (bufferSize);
-        
-        const BRTHelpers::ScopedManagerSetup sm (brtManager);
-        
-        listener = brtManager.CreateListener<BRTBase::CListener> (LISTENER_ID);
-        
-        listenerHRTFModel = brtManager.CreateListenerModel<BRTListenerModel::CListenerHRTFModel> (LISTENER_HRTF_MODEL_ID);
-        if (listenerHRTFModel == nullptr)
-            WriteLog ("BRT: Error creating listener model");
-    
-        if (! listener->ConnectListenerModel (LISTENER_HRTF_MODEL_ID))
-            WriteLog ("BRT: Error connecting listener model");
-
-        listenerBRIRModel = brtManager.CreateListenerModel<BRTListenerModel::CListenerAmbisonicEnvironmentBRIRModel> (LISTENER_BRIR_MODEL_ID);
-        if (listenerBRIRModel == nullptr)
-            WriteLog ("BRT: Error creating listener model");
-       
-        if (! listener->ConnectListenerModel (LISTENER_BRIR_MODEL_ID))
-            WriteLog ("BRT: Error connecting listener model");
 	}
 
 
@@ -163,18 +390,19 @@ namespace BRTSpatialiserCore
 		case HighQualityHRTF:
 			if (hasSofaExtension)
 			{
+                WriteLog ("BRT: LoadBinary " + path);
 				// We assume an ILD file holds the delays, so our SOFA file does not specify delays
 				// bool specifiedDelays = false;
 				// isBinaryResourceLoaded[HighQualityHRTF] = HRTF::CreateFromSofa(path, listener, specifiedDelays);
                 // Load HRTF
-                auto hrtf = std::make_shared<BRTServices::CHRTF>();
-                bool sofaHRTFLoaded = AppUtils::LoadHRTFSofaFile (path, hrtf);
+                // auto hrtf = std::make_shared<BRTServices::CHRTF>();
+                // bool sofaHRTFLoaded = AppUtils::LoadHRTFSofaFile (path, hrtf);
                 // Set one for the listener. We can change it at runtime
-                if (sofaHRTFLoaded)
-                {
-                    WriteLog ("BRT: SOFA HRTF loaded. Setting on listener");
-                    isBinaryResourceLoaded[HighQualityHRTF] = listener->SetHRTF (hrtf);
-                }
+                // if (sofaHRTFLoaded)
+                // {
+                    // WriteLog ("BRT: SOFA HRTF loaded. Setting on listener");
+                    // isBinaryResourceLoaded[HighQualityHRTF] = listener->SetHRTF (hrtf);
+                // }
 			}
 			else // If not sofa file then assume its a 3dti-hrtf file
 			{
@@ -222,6 +450,7 @@ namespace BRTSpatialiserCore
 
 	bool SpatialiserCore::SetFloat(int parameter, float value)
 	{
+        return false;
         WriteLog ("BRT: Setting parameter " + std::to_string (parameter) + " : " + std::to_string (value));
         
 		switch (parameter)
@@ -360,7 +589,7 @@ namespace BRTSpatialiserCore
 		{
 			const float min = -90.0f;
 			const float max = 0.0f;
-            listenerBRIRModel->SetDistanceAttenuationFactor (std::clamp (value, min, max));
+            // listenerBRIRModel->SetDistanceAttenuationFactor (std::clamp (value, min, max));
 			return true;
 		}
 		default:
@@ -388,19 +617,19 @@ namespace BRTSpatialiserCore
 			*value = perSourceInitialValues[parameter];
 			return true;
 		case HeadRadius:
-            if (auto hrtf = listener->GetHRTF())
-                *value = hrtf->GetHeadRadius();
-			return true;
+//            if (auto hrtf = listener->GetHRTF())
+//                *value = hrtf->GetHeadRadius();
+//			return true;
 		case ScaleFactor:
 			*value = scaleFactor;
 			return true;
 		case EnableCustomITD:
-            if (auto hrtf = listener->GetHRTF())
-                *value = listener->GetHRTF()->IsWoodworthITDEnabled() ? 1.0f : 0.0f;
-			return true;
+//            if (auto hrtf = listener->GetHRTF())
+//                *value = listener->GetHRTF()->IsWoodworthITDEnabled() ? 1.0f : 0.0f;
+//			return true;
 		case AnechoicDistanceAttenuation:
-            *value = listener->GetDistanceAttenuationFactor();
-			return true;
+//            *value = listener->GetDistanceAttenuationFactor();
+//			return true;
 		case ILDAttenuation:
 			// *value = listener->GetILDAttenutaion();
 			// return true;
@@ -432,9 +661,9 @@ namespace BRTSpatialiserCore
 			// *value = (float)environment->GetReverberationOrder();
 			// return true;
 		case ReverbDistanceAttenuation:
-            *value = listenerBRIRModel->GetDistanceAttenuationFactor();
+            // *value = listenerBRIRModel->GetDistanceAttenuationFactor();
 			// *value = core.GetMagnitudes().GetReverbDistanceAttenuation();
-            return true;
+            // return true;
 		default:
 			*value = std::numeric_limits<float>::quiet_NaN();
 			return false;

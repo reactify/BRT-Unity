@@ -36,3 +36,8 @@ MonoBehaviour:
     ITD: 0
     ParallaxCorrection: 0
     NearFieldEffect: 0
+  listenerEnvironmentModels:
+  - ListenerID: Listener_0
+    ModelID: Reverb_Path
+    BRIRResourceIndex: 0
+    Enabled: 1

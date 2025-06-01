@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Linq;
+using System;
 
 namespace BRT
 {
@@ -7,24 +9,26 @@ namespace BRT
     public sealed class SpatializerSource : MonoBehaviour
     {
         private AudioSource audioSource;
-        private int instanceId = -1;
 
+        private string listenerModelId;
+        private string listenerEnvironmentModelId;
+        private int instanceId = -1;
         public int InstanceId => instanceId;
+
 
         [SerializeField] private BRTConfiguration configuration;
         public BRTConfiguration GetConfiguration()
         {
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
             if (!Application.isPlaying && configuration == null)
             {
-                var loader = Object.FindFirstObjectByType<BRTConfigurationLoader>();
+                var loader = FindFirstObjectByType<BRTConfigurationLoader>();
                 if (loader != null)
                     configuration = loader.configuration;
             }
-        #endif
+#endif
             return configuration;
         }
-
 
         public int hrtfIndex = 0;
         public int brirIndex = 0;
@@ -40,6 +44,10 @@ namespace BRT
         {
             RefreshInstanceId();
             ApplyResourcesByIndex();
+            InitialiseIdentifiers();
+            CreateSoundSource();
+            ConnectToListenerModel();
+            ConnectToListenerEnvironmentModel();
         }
 
         public void RefreshInstanceId()
@@ -47,7 +55,7 @@ namespace BRT
             if (audioSource.GetSpatializerFloat((int)SpatializerParameter.InstanceId, out float idFloat))
                 instanceId = Mathf.RoundToInt(idFloat);
             else
-                Debug.LogWarning("[SpatialiserSource] Could not get instance ID from spatialiser plugin", this);
+                Debug.LogError("[SpatialiserSource] Could not get instance ID from spatialiser plugin", this);
         }
 
         public void SetHrtfIndex(int index)
@@ -83,6 +91,55 @@ namespace BRT
                 var brir = configuration.brirResources[brirIndex];
                 if (!string.IsNullOrEmpty(brir.sofaFile))
                     NativePluginWrapper.SetBrirResource(instanceId, brir.sofaFile);
+            }
+        }
+
+        void InitialiseIdentifiers()
+        {
+            var listenerModel = configuration.listenerModels?.FirstOrDefault();
+
+            if (listenerModel == null)
+            {
+                Debug.LogError("No listener model found");
+                return;
+            }
+
+            listenerModelId = listenerModel.ModelID;
+            Debug.Log("Listener model id: " + listenerModelId);
+
+            var listenerEnvironmentModel = configuration.listenerEnvironmentModels?.FirstOrDefault();
+
+            if (listenerEnvironmentModel == null)
+            {
+                Debug.LogError("No listener environment model found");
+                return;
+            }
+
+            listenerEnvironmentModelId = listenerEnvironmentModel.ModelID;
+            Debug.Log("Listener model id: " + listenerEnvironmentModelId);
+        }
+
+        void CreateSoundSource()
+        {
+            if (!NativePluginWrapper.BRTSpatializerCreateSoundSource(InstanceId.ToString()))
+            {
+                // Debug.LogError("Error connecting to listener model");
+            }
+        }
+
+        void ConnectToListenerModel()
+        {
+            if (!NativePluginWrapper.BRTSpatializerConnectSoundSource(InstanceId.ToString(), listenerModelId))
+            {
+                Debug.LogError("Error connecting to listener model");
+            }
+        }
+        
+        void ConnectToListenerEnvironmentModel()
+        {   
+            if (!NativePluginWrapper.BRTSpatializerConnectSoundSource(InstanceId.ToString(), listenerEnvironmentModelId))
+            {
+                Debug.LogError("Error connecting to listener model");
             }
         }
     }

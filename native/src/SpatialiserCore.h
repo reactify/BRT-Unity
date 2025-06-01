@@ -86,8 +86,8 @@ namespace BRTSpatialiserCore
         Common::CGlobalParameters globalParameters;                             // Class where the global BRT parameters are defined.
         BRTBase::CBRTManager brtManager;                                        // BRT global manager interface
         std::shared_ptr<BRTBase::CListener> listener;                           // Pointer to listener model
-        std::shared_ptr<BRTListenerModel::CListenerHRTFModel> listenerHRTFModel;
-        std::shared_ptr<BRTListenerModel::CListenerAmbisonicEnvironmentBRIRModel> listenerBRIRModel;
+        std::vector<std::shared_ptr<BRTServices::CHRTF>> hrtfs;
+        std::vector<std::shared_ptr<BRTServices::CHRBRIR>> brirs;
         
 		std::array<float, NumSourceParameters> perSourceInitialValues;
 		float scaleFactor;

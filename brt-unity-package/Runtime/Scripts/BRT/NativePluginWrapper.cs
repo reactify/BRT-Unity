@@ -52,6 +52,30 @@ namespace BRT
         }
 
         [DllImport(DLL_NAME)]
-        public static extern bool BRTSpatializerCreateHRTF(string filePath);
+        public static extern bool BRTSpatializerCreateListener(string listenerId);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTSpatializerCreateListenerModel(int type, string modelName);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTSpatializerConnectListenerModel(string listenerId, string listenerModelId);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTSpatializerLoadHRTF(string filePath);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTSpatializerSetHRTF(int hrtfIndex);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTSpatializerLoadBRIR(string filePath);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTSpatializerSetBRIR(int hrtfIndex);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTSpatializerCreateSoundSource (string soundSourceID);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTSpatializerConnectSoundSource (string soundSourceID, string listenerModelID);
     }
 }

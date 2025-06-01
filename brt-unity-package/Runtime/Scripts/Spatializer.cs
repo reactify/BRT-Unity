@@ -429,17 +429,17 @@ namespace API_3DTI
         private bool sendBinaryResourcePathToPlugin(BinaryResourceRole role, string path)
         {
             Debug.Log("sendBinaryResourcePathToPlugin: " + path);
-            AudioSettings.GetDSPBufferSize(out int dspBufferSize, out _);
+            // AudioSettings.GetDSPBufferSize(out int dspBufferSize, out _);
 
-            if (path.Length == 0)
-            {
-                BRTSpatialiserLoadBinary((int)role, path, AudioSettings.outputSampleRate, dspBufferSize);
-            }
-            else if (!(SaveResourceAsFile(path, out string newPath) && BRTSpatialiserLoadBinary((int)role, newPath, AudioSettings.outputSampleRate, dspBufferSize)))
-            {
-                Debug.LogError($"Failed to load Spatializer binary resource {path} for {role} at sample rate {AudioSettings.outputSampleRate}.");
-                // return false;
-            }
+            // if (path.Length == 0)
+            // {
+            //     BRTSpatialiserLoadBinary((int)role, path, AudioSettings.outputSampleRate, dspBufferSize);
+            // }
+            // else if (!(SaveResourceAsFile(path, out string newPath) && BRTSpatialiserLoadBinary((int)role, newPath, AudioSettings.outputSampleRate, dspBufferSize)))
+            // {
+            //     Debug.LogError($"Failed to load Spatializer binary resource {path} for {role} at sample rate {AudioSettings.outputSampleRate}.");
+            //     // return false;
+            // }
             return true;
         }
 

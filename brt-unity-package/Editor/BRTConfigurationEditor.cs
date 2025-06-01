@@ -13,6 +13,7 @@ namespace BRT.Editor
         private SerializedProperty directivityResources;
         private SerializedProperty nfcFilterResources;
         private SerializedProperty listenerModels;
+        private SerializedProperty listenerEnvironmentModels;
 
         private void OnEnable()
         {
@@ -21,6 +22,7 @@ namespace BRT.Editor
             directivityResources = serializedObject.FindProperty("directivityResources");
             nfcFilterResources = serializedObject.FindProperty("nfcFilterResources");
             listenerModels = serializedObject.FindProperty("listenerModels");
+            listenerEnvironmentModels = serializedObject.FindProperty("listenerEnvironmentModels");
         }
 
         public override void OnInspectorGUI()
@@ -47,7 +49,7 @@ namespace BRT.Editor
 
             EditorGUILayout.Space(20);
 
-            DrawListenerModelIfExists();
+            DrawListenerModels();
 
             serializedObject.ApplyModifiedProperties();
         }
@@ -115,7 +117,7 @@ namespace BRT.Editor
                 .ToList();
         }
 
-        private void DrawListenerModelIfExists()
+        private void DrawListenerModels()
         {
             if (listenerModels == null || listenerModels.arraySize == 0)
                 return;
@@ -123,14 +125,18 @@ namespace BRT.Editor
             SerializedProperty modelProp = listenerModels.GetArrayElementAtIndex(0);
             EditorGUILayout.LabelField("Listener Model", EditorStyles.boldLabel);
             DrawListenerModel(modelProp);
+
+            if (listenerEnvironmentModels == null || listenerEnvironmentModels.arraySize == 0)
+                return;
+
+            modelProp = listenerEnvironmentModels.GetArrayElementAtIndex(0);
+            EditorGUILayout.LabelField("Listener Environment Model", EditorStyles.boldLabel);
+            DrawListenerModel(modelProp);
         }
 
         private void DrawListenerModel(SerializedProperty modelProp)
         {
             EditorGUI.indentLevel++;
-
-            string[] hrtfOptions = GetSofaFileNames(hrtfResources);
-            string[] nfcOptions = GetSofaFileNames(nfcFilterResources);
 
             SerializedProperty prop = modelProp.Copy();
             SerializedProperty endProp = prop.GetEndProperty();
@@ -138,16 +144,17 @@ namespace BRT.Editor
 
             while (!SerializedProperty.EqualContents(prop, endProp))
             {
-                if (prop.name == "HRTFResourceIndex")
+                var popupConfigs = new Dictionary<string, (string label, string[] options)>
                 {
-                    int index = Mathf.Clamp(prop.intValue, 0, Mathf.Max(0, hrtfOptions.Length - 1));
-                    index = EditorGUILayout.Popup("HRTF", index, hrtfOptions);
-                    prop.intValue = index;
-                }
-                else if (prop.name == "NFCResourceIndex")
+                    { "HRTFResourceIndex",  ("HRTF",       GetSofaFileNames(hrtfResources)) },
+                    { "NFCResourceIndex",   ("NFC Filter", GetSofaFileNames(nfcFilterResources)) },
+                    { "BRIRResourceIndex",  ("BRIR",       GetSofaFileNames(brirResources)) }
+                };
+
+                if (popupConfigs.TryGetValue(prop.name, out var config))
                 {
-                    int index = Mathf.Clamp(prop.intValue, 0, Mathf.Max(0, nfcOptions.Length - 1));
-                    index = EditorGUILayout.Popup("NFC Filter", index, nfcOptions);
+                    int index = Mathf.Clamp(prop.intValue, 0, Mathf.Max(0, config.options.Length - 1));
+                    index = EditorGUILayout.Popup(config.label, index, config.options);
                     prop.intValue = index;
                 }
                 else

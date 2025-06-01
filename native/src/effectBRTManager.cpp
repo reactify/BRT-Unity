@@ -48,6 +48,8 @@ namespace BRTManager
             0.5f, // wetness
         };
         state->effectdata = effectdata;
+        
+        WriteLog("BRT: CREATE MANAGER");
 
 		return UNITY_AUDIODSP_OK;
 	}
@@ -139,7 +141,11 @@ namespace BRTManager
         auto& outRightBuffer = data->outRightBuffer;
         
         spatializer->brtManager.ProcessAll();
-        spatializer->listener->GetBuffers (outLeftBuffer, outRightBuffer);
+        
+        if (spatializer->listener)
+            spatializer->listener->GetBuffers (outLeftBuffer, outRightBuffer);
+        else
+            WriteLog ("BRT: No listener found!!!");
     
         for (size_t i = 0; i < length; ++i)
         {

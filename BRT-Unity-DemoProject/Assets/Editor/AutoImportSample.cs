@@ -30,8 +30,8 @@ public static class AutoImportSample
             string projectSamplePath = Path.Combine(Application.dataPath, "Samples", "BRT_Example");
 
             // Log paths for debugging
-            Debug.Log($"[AutoImportSample] packageSamplePath: {packageSamplePath}");
-            Debug.Log($"[AutoImportSample] projectSamplePath: {projectSamplePath}");
+            // Debug.Log($"[AutoImportSample] packageSamplePath: {packageSamplePath}");
+            // Debug.Log($"[AutoImportSample] projectSamplePath: {projectSamplePath}");
 
             // Only copy if the sample doesn't already exist in the project
             if ((!Directory.Exists(projectSamplePath) && Directory.Exists(packageSamplePath)) || force)

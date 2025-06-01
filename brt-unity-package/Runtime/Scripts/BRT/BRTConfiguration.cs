@@ -19,13 +19,24 @@ namespace BRT
         public const string DirectivityResourceFolder = "Data/DirectivityTF/";
         public const string NFCFilterResourceFolder = "Data/SOSFilters/";
 
-        public List<ListenerModel> listenerModels = new List<ListenerModel>();
+        [SerializeField] public List<ListenerModel> listenerModels = new List<ListenerModel>();
+        [SerializeField] public List<ListenerEnvironmentModel> listenerEnvironmentModels = new List<ListenerEnvironmentModel>();
 
         private void OnEnable()
         {
             if (listenerModels == null || listenerModels.Count == 0)
             {
                 listenerModels.Add(new ListenerModel());
+#if UNITY_EDITOR
+                EditorUtility.SetDirty(this); // mark dirty so the change gets saved
+#endif
+            }
+
+            Debug.Log("Listener environment models: " + listenerEnvironmentModels.Count);
+            if (listenerEnvironmentModels == null || listenerEnvironmentModels.Count == 0)
+            {
+                Debug.Log("Creating listener environment model");
+                listenerEnvironmentModels.Add(new ListenerEnvironmentModel());
 #if UNITY_EDITOR
                 EditorUtility.SetDirty(this); // mark dirty so the change gets saved
 #endif
