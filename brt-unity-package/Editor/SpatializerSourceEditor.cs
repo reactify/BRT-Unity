@@ -17,17 +17,13 @@ namespace BRT.Editor
                 return;
             }
 
-            DrawDefaultInspectorWithout("hrtfIndex", "brirIndex");
+            DrawDefaultInspectorWithout("directivityIndex");
 
-            string[] hrtfOptions = GetSofaNames(config.hrtfResources);
-            string[] brirOptions = GetSofaNames(config.brirResources);
-
-            spatializer.hrtfIndex = EditorGUILayout.Popup("HRTF Resource", spatializer.hrtfIndex, hrtfOptions);
-            spatializer.brirIndex = EditorGUILayout.Popup("BRIR Resource", spatializer.brirIndex, brirOptions);
+            string[] directivityOptions = GetSofaNames(config.directivityResources);
+            spatializer.directivityIndex = EditorGUILayout.Popup("Directivity", spatializer.directivityIndex, directivityOptions);
 
             if (GUI.changed)
             {
-                spatializer.ApplyResourcesByIndex();
                 EditorUtility.SetDirty(spatializer);
             }
         }

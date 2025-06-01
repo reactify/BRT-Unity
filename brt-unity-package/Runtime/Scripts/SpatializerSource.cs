@@ -15,7 +15,6 @@ namespace BRT
         private int instanceId = -1;
         public int InstanceId => instanceId;
 
-
         [SerializeField] private BRTConfiguration configuration;
         public BRTConfiguration GetConfiguration()
         {
@@ -30,8 +29,7 @@ namespace BRT
             return configuration;
         }
 
-        public int hrtfIndex = 0;
-        public int brirIndex = 0;
+        public int directivityIndex = 0;
 
         private void Awake()
         {
@@ -43,7 +41,6 @@ namespace BRT
         private void Start()
         {
             RefreshInstanceId();
-            ApplyResourcesByIndex();
             InitialiseIdentifiers();
             CreateSoundSource();
             ConnectToListenerModel();
@@ -55,43 +52,22 @@ namespace BRT
             if (audioSource.GetSpatializerFloat((int)SpatializerParameter.InstanceId, out float idFloat))
                 instanceId = Mathf.RoundToInt(idFloat);
             else
-                Debug.LogError("[SpatialiserSource] Could not get instance ID from spatialiser plugin", this);
+                Debug.Log("[SpatialiserSource] Could not get instance ID from spatialiser plugin", this);
         }
 
-        public void SetHrtfIndex(int index)
-        {
-            if (configuration == null || configuration.hrtfResources == null || index < 0 || index >= configuration.hrtfResources.Count)
-                return;
-            hrtfIndex = index;
-            ApplyResourcesByIndex();
-        }
-
-        public void SetBrirIndex(int index)
-        {
-            if (configuration == null || configuration.brirResources == null || index < 0 || index >= configuration.brirResources.Count)
-                return;
-            brirIndex = index;
-            ApplyResourcesByIndex();
-        }
-
-        public void ApplyResourcesByIndex()
+        public void SetDirectivityIndex(int index)
         {
             if (instanceId < 0 || configuration == null)
                 return;
 
-            if (configuration.hrtfResources != null && hrtfIndex >= 0 && hrtfIndex < configuration.hrtfResources.Count)
-            {
-                var hrtf = configuration.hrtfResources[hrtfIndex];
-                if (!string.IsNullOrEmpty(hrtf.sofaFile))
-                    NativePluginWrapper.SetHrtfResource(instanceId, hrtf.sofaFile);
-            }
+            if (configuration.directivityResources == null || index < 0 || index >= configuration.directivityResources.Count)
+                return;
 
-            if (configuration.brirResources != null && brirIndex >= 0 && brirIndex < configuration.brirResources.Count)
-            {
-                var brir = configuration.brirResources[brirIndex];
-                if (!string.IsNullOrEmpty(brir.sofaFile))
-                    NativePluginWrapper.SetBrirResource(instanceId, brir.sofaFile);
-            }
+            directivityIndex = index;
+
+            var directivity = configuration.directivityResources[directivityIndex];
+            Debug.Log("TODO: Load directivity");
+            // if (!string.IsNullOrEmpty(directivity.sofaFile))
         }
 
         void InitialiseIdentifiers()
@@ -105,7 +81,6 @@ namespace BRT
             }
 
             listenerModelId = listenerModel.ModelID;
-            Debug.Log("Listener model id: " + listenerModelId);
 
             var listenerEnvironmentModel = configuration.listenerEnvironmentModels?.FirstOrDefault();
 
@@ -116,7 +91,6 @@ namespace BRT
             }
 
             listenerEnvironmentModelId = listenerEnvironmentModel.ModelID;
-            Debug.Log("Listener model id: " + listenerEnvironmentModelId);
         }
 
         void CreateSoundSource()
