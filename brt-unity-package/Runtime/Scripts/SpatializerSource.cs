@@ -14,6 +14,7 @@ namespace BRT
         private string listenerEnvironmentModelId;
         private int instanceId = -1;
         public int InstanceId => instanceId;
+        public int directivityIndex = 0;
 
         [SerializeField] private BRTConfiguration configuration;
         public BRTConfiguration GetConfiguration()
@@ -28,8 +29,6 @@ namespace BRT
 #endif
             return configuration;
         }
-
-        public int directivityIndex = 0;
 
         private void Awake()
         {
@@ -47,14 +46,6 @@ namespace BRT
             ConnectToListenerEnvironmentModel();
         }
 
-        public void RefreshInstanceId()
-        {
-            if (audioSource.GetSpatializerFloat((int)SpatializerParameter.InstanceId, out float idFloat))
-                instanceId = Mathf.RoundToInt(idFloat);
-            else
-                Debug.Log("[SpatialiserSource] Could not get instance ID from spatialiser plugin", this);
-        }
-
         public void SetDirectivityIndex(int index)
         {
             if (instanceId < 0 || configuration == null)
@@ -69,14 +60,22 @@ namespace BRT
             Debug.Log("TODO: Load directivity");
             // if (!string.IsNullOrEmpty(directivity.sofaFile))
         }
+        
+        private void RefreshInstanceId()
+        {
+            if (audioSource.GetSpatializerFloat((int)SpatializerParameter.InstanceId, out float idFloat))
+                instanceId = Mathf.RoundToInt(idFloat);
+            else
+                Debug.LogWarning("[SpatialiserSource] Could not get instance ID from spatialiser plugin", this);
+        }
 
-        void InitialiseIdentifiers()
+        private void InitialiseIdentifiers()
         {
             var listenerModel = configuration.listenerModels?.FirstOrDefault();
 
             if (listenerModel == null)
             {
-                Debug.LogError("No listener model found");
+                Debug.LogError("BRT: No listener model found");
                 return;
             }
 
@@ -86,35 +85,31 @@ namespace BRT
 
             if (listenerEnvironmentModel == null)
             {
-                Debug.LogError("No listener environment model found");
+                Debug.LogError("BRT: No listener environment model found");
                 return;
             }
 
             listenerEnvironmentModelId = listenerEnvironmentModel.ModelID;
         }
 
-        void CreateSoundSource()
+        private void CreateSoundSource()
         {
             if (!NativePluginWrapper.BRTSpatializerCreateSoundSource(InstanceId.ToString()))
-            {
-                // Debug.LogError("Error connecting to listener model");
-            }
+                Debug.LogError("BRT: Error creating sound source " + InstanceId.ToString());
         }
 
-        void ConnectToListenerModel()
+        private void ConnectToListenerModel()
         {
             if (!NativePluginWrapper.BRTSpatializerConnectSoundSource(InstanceId.ToString(), listenerModelId))
             {
-                Debug.LogError("Error connecting to listener model");
+                Debug.LogError("BRT: Error connecting sound source " + InstanceId.ToString() + " to listener model " + listenerModelId);
             }
         }
         
-        void ConnectToListenerEnvironmentModel()
+        private void ConnectToListenerEnvironmentModel()
         {   
             if (!NativePluginWrapper.BRTSpatializerConnectSoundSource(InstanceId.ToString(), listenerEnvironmentModelId))
-            {
-                Debug.LogError("Error connecting to listener model");
-            }
+                Debug.LogError("BRT: Error connecting sound source " + InstanceId.ToString() + " to listener environment model " + listenerEnvironmentModelId);
         }
     }
 }

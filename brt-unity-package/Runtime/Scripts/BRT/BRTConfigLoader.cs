@@ -19,7 +19,20 @@ namespace BRT
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
+            Initialize();
+        }
+
+        private void Start()
+        {
+            Initialize();
             LoadConfig();
+        }
+
+        private void Initialize()
+        {
+            AudioSettings.GetDSPBufferSize(out int dspBufferSize, out _);
+            NativePluginWrapper.BRTSpatialiserResetIfNeeded(AudioSettings.outputSampleRate, dspBufferSize);
+            Debug.Log("BRT: Output Sample Rate " + AudioSettings.outputSampleRate);
         }
 
     #if UNITY_EDITOR
@@ -33,64 +46,64 @@ namespace BRT
         private void LoadConfig()
         {
             var listenerId = configuration.listenerModels[0].ListenerID;
-            Debug.Log("Creating listener: " + listenerId);
+            Debug.Log("BRT: Creating listener: " + listenerId);
 
             if (!NativePluginWrapper.BRTSpatializerCreateListener(listenerId))
-                Debug.Log("Error creating listener");
+                Debug.LogError("BRT: Error creating listener");
 
             var listenerModelId = configuration.listenerModels[0].ModelID;
+            Debug.Log("BRT: Creating listener model " + listenerModelId);
             if (!NativePluginWrapper.BRTSpatializerCreateListenerModel(0, listenerModelId))
-                Debug.Log("Error creating listenerModel");
+                Debug.LogError("Error creating listenerModel " + listenerModelId);
 
             if (!NativePluginWrapper.BRTSpatializerConnectListenerModel(listenerId, listenerModelId))
-                Debug.Log("Error connecting listenerModel");
+                Debug.LogError("BRT: Error connecting listenerModel");
 
             var listenerEnvironmentModelId = configuration.listenerEnvironmentModels[0].ModelID;
+            Debug.Log("BRT: Creating listener model " + listenerEnvironmentModelId);
             if (!NativePluginWrapper.BRTSpatializerCreateListenerModel(1, listenerEnvironmentModelId))
-                Debug.Log("Error creating listenerEnvironmentModel");
+                Debug.LogError("BRT: Error creating listenerEnvironmentModel");
 
+            Debug.Log("BRT: Connecting listener model " + listenerEnvironmentModelId + " to listener " + listenerId);
             if (!NativePluginWrapper.BRTSpatializerConnectListenerModel(listenerId, listenerEnvironmentModelId))
-                Debug.Log("Error connecting listenerModel");
+                Debug.Log("BRT: Error connecting listenerModel");
 
             foreach (var hrtf in configuration.hrtfResources)
             {
                 string filePath = BRTConfiguration.HRTFResourceFolder + hrtf.sofaFile;
+                Debug.Log("BRT: Attempting to load HRTF: " + filePath);
                 if (ResourceExtractor.ExtractToPersistentDataPath(filePath, filePath, out string fullPath))
                 {
-                    Debug.Log("File ready at: " + fullPath);
+                    Debug.Log("BRT: File ready at: " + fullPath);
                     NativePluginWrapper.BRTSpatializerLoadHRTF(fullPath);
                 }
                 else
                 {
-                    Debug.LogError("Failed to extract SOFA file.");
+                    Debug.LogError("BRT: Failed to extract SOFA file.");
                 }
             }
 
             if (!NativePluginWrapper.BRTSpatializerSetHRTF(0)) // TODO: Use resource index
-                Debug.Log("Error setting HRTF");
+                Debug.LogError("BRT: Error setting HRTF");
 
-            foreach (var brir in configuration.brirResources)
-            {
-                string virtualPath = BRTConfiguration.BRIRResourceFolder + brir.sofaFile;
-                // NativePluginWrapper.LoadBRIR(virtualPath);
-            }
 
             foreach (var brir in configuration.brirResources)
             {
                 string filePath = BRTConfiguration.BRIRResourceFolder + brir.sofaFile;
+                Debug.Log("BRT: Attempting to load BRIR: " + filePath);
                 if (ResourceExtractor.ExtractToPersistentDataPath(filePath, filePath, out string fullPath))
                 {
-                    Debug.Log("File ready at: " + fullPath);
+                    Debug.Log("BRT: File ready at: " + fullPath);
                     NativePluginWrapper.BRTSpatializerLoadBRIR(fullPath);
                 }
                 else
                 {
-                    Debug.LogError("Failed to extract SOFA file.");
+                    Debug.LogError("BRT: Failed to extract SOFA file.");
                 }
             }
 
             if (!NativePluginWrapper.BRTSpatializerSetBRIR(0)) // TODO: Use resource index
-                Debug.Log("Error setting HRTF");
+                Debug.LogError("BRT: Error setting BRIR");
         }
     }
 }

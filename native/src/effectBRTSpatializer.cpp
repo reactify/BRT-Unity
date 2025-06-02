@@ -263,39 +263,18 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK CreateCallback (UnityAudioEffectSt
 	}
 	catch (const SpatialiserCore::IncorrectAudioStateException& e)
 	{
-		WriteLog (std::string("Error: Spatialiser CreateCallback called with incorrect audio state. ") + e.what());
+		WriteLog (std::string ("Error: Spatialiser CreateCallback called with incorrect audio state. ") + e.what());
 		return UNITY_AUDIODSP_ERR_UNSUPPORTED;
 	}
     
     WriteLog ("BRT: Created Spatialiser Source");
 
-	// CREATE Instance state and grab parameters
+    state->spatializerdata->distanceattenuationcallback = DistanceAttenuationCallback;
 
 	EffectData* effectdata = new EffectData;
     effectdata->inMonoBuffer.resize (state->dspbuffersize);
-    
-    // Create sound source
-    effectdata->sourceID = spatializer->numSoundSources++;
-    
+    effectdata->sourceID = spatializer->getNextSoundSourceId();
     state->effectdata = effectdata;
-    state->spatializerdata->distanceattenuationcallback = DistanceAttenuationCallback;
-    
-    // Set default parameters
-    /*
-    if (effectdata->soundSource != nullptr)
-    {
-        static_assert (std::tuple_size<decltype(SpatialiserCore::perSourceInitialValues)>::value == FloatParameter::NumSourceParameters, "NumSourceParameters should match the size of SpatialiserCore::perSourceInitialValues array.");
-        
-        // Initialize with defaults
-        for (int i = FloatParameter::FirstSourceParameter; i < FloatParameter::NumSourceParameters; ++i)
-        {
-            float value = 0;
-            
-            if (spatializer->GetFloat (i, &value))
-                SetFloatParameter (spatializer, state, i, value);
-        }
-    }
-     */
 
 	return UNITY_AUDIODSP_OK;
 }
@@ -318,27 +297,14 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK ReleaseCallback (UnityAudioEffectS
         
         if (auto soundSource = spatializer->brtManager.GetSoundSource (std::to_string (data->sourceID)))
         {
-            auto sourceID = soundSource->GetID();
-            
             const BRTHelpers::ScopedManagerSetup sm (spatializer->brtManager);
             
-            for (std::string listenerModelId : spatializer->brtManager.GetListenerModelIDs())
-            {
-//                auto listenerModel = spatializer->brtManager.GetListenerModel (listenerModelId);
-//                if (! listenerModel->DisconnectSoundSource (sourceID))
-//                    WriteLog ("BRT: Error disconnecting sound source from listener model");
-            }
+            auto sourceId = soundSource->GetID();
             
-//            if (! spatializer->brtManager.RemoveSoundSource (sourceID))
-//                WriteLog ("BRT: Error removing sound source: " + sourceID);
-        }
-        
-        if (auto listener = spatializer->listener)
-        {
-            spatializer->listener->RemoveHRTF();
-//            
-//            for (auto model : spatializer->listenerModels)
-//                spatializer->listener->DisconnectListenerModel (model->GetModelID());
+            if (spatializer->brtManager.RemoveSoundSource (sourceId))
+                spatializer->releaseSoundSourceId (std::stoi (sourceId));
+            else
+                WriteLog ("BRT: Error removing sound source: " + sourceId);
         }
         
         delete data;

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Runtime.InteropServices;
+using AOT;
 
 namespace BRT
 {
@@ -11,35 +12,31 @@ namespace BRT
         private const string DLL_NAME = "AudioPluginBRTUnity";
 #endif
 
+        // Declare the delegate type that matches the native callback signature
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void ErrorCallback([MarshalAs(UnmanagedType.LPStr)] string message);
 
+        // Import the native method that registers the callback
         [DllImport(DLL_NAME)]
         private static extern void SetErrorCallback(ErrorCallback callback);
 
+        // Keep a reference to the delegate so it doesn't get garbage collected
         private static readonly ErrorCallback callbackDelegate = OnError;
+
+        // Annotated callback method (must be static, and have the MonoPInvokeCallback attribute)
+        [MonoPInvokeCallback(typeof(ErrorCallback))]
+        private static void OnError([MarshalAs(UnmanagedType.LPStr)] string message)
+        {
+            Debug.LogError($"[BRT NATIVE] Error: {message}");
+        }
 
         static NativePluginWrapper()
         {
             SetErrorCallback(callbackDelegate);
         }
 
-        private static void OnError(string msg)
-        {
-            Debug.Log("[BRT NATIVE] " + msg);
-        }
-
-        public static void LoadHRTF(string virtualPath)
-        {
-            Debug.Log($"[Plugin] LoadHRTF: {virtualPath}");
-            // TODO: Native call
-        }
-
-        public static void LoadBRIR(string virtualPath)
-        {
-            Debug.Log($"[Plugin] LoadBRIR: {virtualPath}");
-            // TODO: Native call
-        }
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTSpatialiserResetIfNeeded(int sampleRate, int dspBufferSize);
 
         [DllImport(DLL_NAME)]
         public static extern bool BRTSpatializerCreateListener(string listenerId);

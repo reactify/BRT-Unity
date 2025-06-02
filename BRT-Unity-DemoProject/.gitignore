@@ -35,3 +35,5 @@ sysinfo.txt
 # Ignore platform-specific stuff
 .DS_Store
 Thumbs.db
+.utmp/
+*.apk

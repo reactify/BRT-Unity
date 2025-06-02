@@ -89,11 +89,10 @@ namespace BRTSpatialiserCore
         std::vector<std::shared_ptr<BRTServices::CHRTF>> hrtfs;
         std::vector<std::shared_ptr<BRTServices::CHRBRIR>> brirs;
         
-		std::array<float, NumSourceParameters> perSourceInitialValues;
 		float scaleFactor;
 		bool isLimiterEnabled;
 		bool enableReverbProcessing;
-        UInt32 numSoundSources = 0;
+        std::bitset<128> soundSourceIds;
         
 		// This mutex must be locked during any use of the spatializer instance, or in the creation/destruction of instances.
 		inline static std::mutex& mutex()
@@ -115,6 +114,9 @@ namespace BRTSpatialiserCore
 
 		bool SetFloat (int parameter, float value);
 		bool GetFloat (int parameter, float* value);
+        
+        int getNextSoundSourceId();
+        void releaseSoundSourceId (int soundSourceId);
 
 		class IncorrectAudioStateException : public std::runtime_error
 		{

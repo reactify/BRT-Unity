@@ -127,6 +127,7 @@ namespace BRTSpatialiserCore
                 break;
             case 1:
                 listenerModel = brtManager.CreateListenerModel<CListenerAmbisonicEnvironmentBRIRModel> (listenerModelId);
+                break;
             default:
                 listenerModel = brtManager.CreateListenerModel<CListenerHRTFModel> (listenerModelId);
                 break;
@@ -222,11 +223,18 @@ namespace BRTSpatialiserCore
         
         if (instance->listener)
         {
-            instance->listener->SetHRTF (instance->hrtfs[hrtfIndex]);
-            return true;
+            if (hrtfIndex >= instance->hrtfs.size())
+            {
+                WriteLog ("BRT: HRTF index " + std::to_string (hrtfIndex) + " out of bounds");
+                RaiseError ("BRT: Error setting HRTF");
+                return false;
+            }
+                
+            return instance->listener->SetHRTF (instance->hrtfs[hrtfIndex]);
         }
 
-        RaiseError ("Error setting HRTF");
+        WriteLog ("BRT: Error setting HRTF");
+        RaiseError ("BRT: Error setting HRTF");
         
         return false;
     }
@@ -328,11 +336,11 @@ namespace BRTSpatialiserCore
             return false;
         }
         
-        auto& brtManager = instance->brtManager;
-        
         if (instance->listener)
         {
             WriteLog ("BRT: Listener exists. Finding listener model: " + std::string (listenerModelID));
+         
+            auto& brtManager = instance->brtManager;
             
             const BRTHelpers::ScopedManagerSetup sm (brtManager);
             
@@ -347,26 +355,11 @@ namespace BRTSpatialiserCore
         return false;
     }
 
-    // const std::string LISTENER_BRIR_MODEL_ID = "listenerAmbisonicBRIR";
-    // const std::string SOUND_SOURCE_ID = "soundSource";
-
 	SpatialiserCore::SpatialiserCore (UInt32 sampleRate, UInt32 bufferSize)
       : scaleFactor (1.0f),
         isLimiterEnabled (true),
         enableReverbProcessing (false)
 	{
-		perSourceInitialValues[EnableHRTFInterpolation] = 1.0f;
-		perSourceInitialValues[EnableFarDistanceLPF] = 1.0f;
-		perSourceInitialValues[EnableDistanceAttenuationAnechoic] = 1.0f;
-		perSourceInitialValues[EnableNearFieldEffect] = 1.0f;
-		perSourceInitialValues[SpatializationMode] = 0.0f;
-
-		const float LimiterThreshold = -30.0f;
-		const float LimiterAttack = 500.0f;
-		const float LimiterRelease = 500.0f;
-		const float LimiterRatio = 6;
-		// limiter.Setup(sampleRate, LimiterRatio, LimiterThreshold, LimiterAttack, LimiterRelease);
-        
         globalParameters.SetSampleRate (sampleRate);
         globalParameters.SetBufferSize (bufferSize);
 	}
@@ -462,9 +455,7 @@ namespace BRTSpatialiserCore
 		case SpatializationMode:
 		case EnableReverbSend:
 		case EnableDistanceAttenuationReverb:
-			perSourceInitialValues[parameter] = value;
-			return true;
-
+                return true;
 		case HeadRadius:
 		{
 			const float min = 0.0f;
@@ -538,7 +529,6 @@ namespace BRTSpatialiserCore
 			{
 				// listener->EnableDirectionality(Common::T_ear::LEFT);
 			}
-			return true;
 		}
 		case EnableHearingAidDirectionalityRight:
 		{
@@ -614,7 +604,7 @@ namespace BRTSpatialiserCore
 		case SpatializationMode:
 		case EnableReverbSend:
 		case EnableDistanceAttenuationReverb:
-			*value = perSourceInitialValues[parameter];
+            *value = std::numeric_limits<float>::quiet_NaN();
 			return true;
 		case HeadRadius:
 //            if (auto hrtf = listener->GetHRTF())
@@ -669,6 +659,24 @@ namespace BRTSpatialiserCore
 			return false;
 		}
 	}
+
+    int SpatialiserCore::getNextSoundSourceId()
+    {
+        for (int i = 0; i < soundSourceIds.size(); ++i)
+        {
+            if (! soundSourceIds.test(i))
+            {
+                soundSourceIds.set (i);
+                return i;
+            }
+        }
+        return -1; // out of IDs
+    }
+
+    void SpatialiserCore::releaseSoundSourceId (int soundSourceId)
+    {
+        soundSourceIds.reset (soundSourceId);
+    }
 
 	SpatialiserCore* SpatialiserCore::instance(UInt32 sampleRate, UInt32 bufferSize)
 	{
