@@ -32,10 +32,8 @@ namespace BRT
 #endif
             }
 
-            Debug.Log("Listener environment models: " + listenerEnvironmentModels.Count);
             if (listenerEnvironmentModels == null || listenerEnvironmentModels.Count == 0)
             {
-                Debug.Log("Creating listener environment model");
                 listenerEnvironmentModels.Add(new ListenerEnvironmentModel());
 #if UNITY_EDITOR
                 EditorUtility.SetDirty(this); // mark dirty so the change gets saved

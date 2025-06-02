@@ -240,6 +240,67 @@ namespace BRTSpatialiserCore
     }
 
     extern "C" UNITY_AUDIODSP_EXPORT_API
+    bool BRTSpatializerLoadNearFieldCompensationFilter (const char* nfcFilterFile)
+    {
+        WriteLog ("BRT: Creating NFC Filter " +  std::string (nfcFilterFile));
+        
+        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
+
+        SpatialiserCore* instance = SpatialiserCore::instance();
+        if (instance == nullptr)
+        {
+            RaiseError ("BRT Error: No spatializer instance found");
+            return false;
+        }
+        
+        auto sosFilter = std::make_shared<BRTServices::CSOSFilters>();
+        
+        if (! AppUtils::LoadNearFieldSOSFilter (nfcFilterFile, sosFilter))
+        {
+            RaiseError ("BRT: Error loading SOFA NFC file");
+            return false;
+        }
+        
+        instance->ilds.emplace_back (sosFilter);
+        
+        return true;
+    }
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API
+    bool BRTSpatializerSetNearFieldCompensationFilter (int ildIndex)
+    {
+        WriteLog ("BRT: Setting Near Field Compensation Filter: " + std::to_string (ildIndex));
+        
+        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
+
+        SpatialiserCore* instance = SpatialiserCore::instance();
+        if (instance == nullptr)
+        {
+            WriteLog ("BRT Error: No spatializer instance found");
+            return false;
+        }
+        
+        auto& brtManager = instance->brtManager;
+        
+        if (instance->listener)
+        {
+            if (ildIndex >= instance->ilds.size())
+            {
+                WriteLog ("BRT: ILD index " + std::to_string (ildIndex) + " out of bounds");
+                RaiseError ("BRT: Error setting ILD");
+                return false;
+            }
+                
+            return instance->listener->SetNearFieldCompensationFilters (instance->ilds[ildIndex]);
+        }
+
+        WriteLog ("BRT: Error setting HRTF");
+        RaiseError ("BRT: Error setting HRTF");
+        
+        return false;
+    }
+
+    extern "C" UNITY_AUDIODSP_EXPORT_API
     bool BRTSpatializerLoadBRIR (const char* brirFile)
     {
         WriteLog ("BRT: Loading BRIR " +  std::string (brirFile));

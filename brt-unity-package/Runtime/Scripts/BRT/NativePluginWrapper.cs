@@ -54,6 +54,12 @@ namespace BRT
         public static extern bool BRTSpatializerSetHRTF(int hrtfIndex);
 
         [DllImport(DLL_NAME)]
+        public static extern bool BRTSpatializerLoadNearFieldCompensationFilter(string nfcFilterFile);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTSpatializerSetNearFieldCompensationFilter (int ildIndex);
+
+        [DllImport(DLL_NAME)]
         public static extern bool BRTSpatializerLoadBRIR(string filePath);
 
         [DllImport(DLL_NAME)]

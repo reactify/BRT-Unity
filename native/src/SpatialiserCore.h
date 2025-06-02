@@ -87,6 +87,7 @@ namespace BRTSpatialiserCore
         BRTBase::CBRTManager brtManager;                                        // BRT global manager interface
         std::shared_ptr<BRTBase::CListener> listener;                           // Pointer to listener model
         std::vector<std::shared_ptr<BRTServices::CHRTF>> hrtfs;
+        std::vector<std::shared_ptr<BRTServices::CSOSFilters>> ilds;
         std::vector<std::shared_ptr<BRTServices::CHRBRIR>> brirs;
         
 		float scaleFactor;

@@ -86,6 +86,25 @@ namespace BRT
             if (!NativePluginWrapper.BRTSpatializerSetHRTF(0)) // TODO: Use resource index
                 Debug.LogError("BRT: Error setting HRTF");
 
+            // Load NFC filters
+            foreach (var nfcFilter in configuration.nfcFilterResources)
+            {
+                string filePath = BRTConfiguration.NFCFilterResourceFolder + nfcFilter.sofaFile;
+                Debug.Log("BRT: Attempting to load NFC filter: " + filePath);
+                if (ResourceExtractor.ExtractToPersistentDataPath(filePath, filePath, out string fullPath))
+                {
+                    Debug.Log("BRT: File ready at: " + fullPath);
+                    NativePluginWrapper.BRTSpatializerLoadNearFieldCompensationFilter(fullPath);
+                }
+                else
+                {
+                    Debug.LogError("BRT: Failed to extract SOFA file.");
+                }
+            }
+
+            if (!NativePluginWrapper.BRTSpatializerSetNearFieldCompensationFilter(0)) // TODO: Use resource index
+                Debug.LogError("BRT: Error setting Near Field Compensation Filter");
+
 
             foreach (var brir in configuration.brirResources)
             {
