@@ -2,13 +2,14 @@
  * BRT-Unity: Core
 **/
 
-#include "SpatialiserCore.h"
+#include "BRTLibraryWrapper.h"
+#include "AudioPluginUtil.h"
 #include "AppUtils.h"
 
 //==============================================================================
 namespace BRTManager
 {
-    using namespace BRTSpatialiserCore;
+    using namespace BRTUnity;
 
 	enum Parameter
 	{
@@ -23,8 +24,6 @@ namespace BRTManager
         CMonoBuffer<float> outRightBuffer;
 	};
 
-    std::atomic<bool> doesInstanceExist { false };
-
     inline void WriteLog (std::string logText)
     {
         std::cerr << logText << std::endl;
@@ -32,15 +31,7 @@ namespace BRTManager
 
     //==========================================================================
 	UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK CreateCallback (UnityAudioEffectState* state)
-	{
-		if (doesInstanceExist.exchange (true))
-		{
-			// There is already an instance
-			return UNITY_AUDIODSP_ERR_UNSUPPORTED;
-		}
-        
-		assert (doesInstanceExist);
-
+    {
         auto effectdata = new EffectData;
         effectdata->outLeftBuffer.resize (state->dspbuffersize);
         effectdata->outRightBuffer.resize (state->dspbuffersize);
@@ -50,17 +41,21 @@ namespace BRTManager
         state->effectdata = effectdata;
         
         WriteLog("BRT: CREATE MANAGER");
+        
+        BRTLibraryWrapper::initOrReplace (state->samplerate, state->dspbuffersize);
 
 		return UNITY_AUDIODSP_OK;
 	}
 
     UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK ReleaseCallback (UnityAudioEffectState* state)
     {
+        if (auto* brtInstance = BRTLibraryWrapper::instance())
+            brtInstance->destroy();
+        
         if (EffectData* data = state->GetEffectData<EffectData>())
             delete data;
         
-        assert (doesInstanceExist);
-        doesInstanceExist = false;
+        WriteLog ("BRT: DELETE MANAGER");
         
         return UNITY_AUDIODSP_OK;
     }
@@ -82,9 +77,6 @@ namespace BRTManager
 		{
 			return UNITY_AUDIODSP_ERR_UNSUPPORTED;
 		}
-        
-        std::lock_guard<std::mutex> lock (BRTSpatialiserCore::SpatialiserCore::mutex());
-		data->parameters[index] = value;
 		
         return UNITY_AUDIODSP_OK;
 	}
@@ -99,7 +91,6 @@ namespace BRTManager
 			return UNITY_AUDIODSP_ERR_UNSUPPORTED;
 		}
 		
-        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
 		*value = data->parameters[index];
 		
         return UNITY_AUDIODSP_OK;
@@ -115,20 +106,6 @@ namespace BRTManager
     ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer,
                      unsigned int length, int inchannels, int outchannels)
 	{
-        std::lock_guard<std::mutex> lock (SpatialiserCore::mutex());
-		
-        SpatialiserCore* spatializer;
-        
-		try
-		{
-            spatializer = SpatialiserCore::instance (state->samplerate, state->dspbuffersize);
-		}
-        catch (const SpatialiserCore::IncorrectAudioStateException& e)
-		{
-			WriteLog (std::string("Error: Reverb ProcessCallback called with incorrect audio state. ") + e.what());
-			return UNITY_AUDIODSP_ERR_UNSUPPORTED;
-		}
-
 		if (inchannels != 2 || outchannels != 2)
 		{
             WriteLog ("BRT: ERROR: Incorrect channel count in Reverb plugin");
@@ -140,10 +117,15 @@ namespace BRTManager
         auto& outLeftBuffer = data->outLeftBuffer;
         auto& outRightBuffer = data->outRightBuffer;
         
-        spatializer->brtManager.ProcessAll();
+        auto* brtInstance = BRTLibraryWrapper::instance();
+
+        if (! brtInstance || ! brtInstance->isCompatible (state->samplerate, state->dspbuffersize))
+            return UNITY_AUDIODSP_ERR_UNSUPPORTED;
         
-        if (spatializer->listener)
-            spatializer->listener->GetBuffers (outLeftBuffer, outRightBuffer);
+        brtInstance->brtManager.ProcessAll();
+        
+        if (brtInstance->listener)
+            brtInstance->listener->GetBuffers (outLeftBuffer, outRightBuffer);
         else
             WriteLog ("BRT: No listener found!!!");
     
@@ -152,6 +134,11 @@ namespace BRTManager
             outbuffer[i * 2 + 0] = outLeftBuffer[i];
             outbuffer[i * 2 + 1] = outRightBuffer[i];
         }
+
+        if (! brtInstance || ! brtInstance->isCompatible (state->samplerate, state->dspbuffersize))
+            return UNITY_AUDIODSP_ERR_UNSUPPORTED;
+
+        brtInstance->process (inbuffer, outbuffer, length, inchannels, outchannels);
 
 		return UNITY_AUDIODSP_OK;
 	}

@@ -36,7 +36,7 @@ namespace BRT
         }
 
         [DllImport(DLL_NAME)]
-        public static extern bool BRTSpatialiserResetIfNeeded(int sampleRate, int dspBufferSize);
+        public static extern void BRTSpatializerResetIfNeeded(int sampleRate, int dspBufferSize);
 
         [DllImport(DLL_NAME)]
         public static extern bool BRTSpatializerCreateListener(string listenerId);
@@ -51,19 +51,10 @@ namespace BRT
         public static extern bool BRTSpatializerLoadHRTF(string filePath);
 
         [DllImport(DLL_NAME)]
-        public static extern bool BRTSpatializerSetHRTF(int hrtfIndex);
-
-        [DllImport(DLL_NAME)]
         public static extern bool BRTSpatializerLoadNearFieldCompensationFilter(string nfcFilterFile);
 
         [DllImport(DLL_NAME)]
-        public static extern bool BRTSpatializerSetNearFieldCompensationFilter (int ildIndex);
-
-        [DllImport(DLL_NAME)]
         public static extern bool BRTSpatializerLoadBRIR(string filePath);
-
-        [DllImport(DLL_NAME)]
-        public static extern bool BRTSpatializerSetBRIR(int hrtfIndex);
 
         [DllImport(DLL_NAME)]
         public static extern bool BRTSpatializerCreateSoundSource (string soundSourceID);

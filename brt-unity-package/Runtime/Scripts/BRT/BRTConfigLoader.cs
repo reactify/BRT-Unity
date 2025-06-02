@@ -31,7 +31,7 @@ namespace BRT
         private void Initialize()
         {
             AudioSettings.GetDSPBufferSize(out int dspBufferSize, out _);
-            NativePluginWrapper.BRTSpatialiserResetIfNeeded(AudioSettings.outputSampleRate, dspBufferSize);
+            NativePluginWrapper.BRTSpatializerResetIfNeeded(AudioSettings.outputSampleRate, dspBufferSize);
             Debug.Log("BRT: Output Sample Rate " + AudioSettings.outputSampleRate);
         }
 
@@ -75,16 +75,14 @@ namespace BRT
                 if (ResourceExtractor.ExtractToPersistentDataPath(filePath, filePath, out string fullPath))
                 {
                     Debug.Log("BRT: File ready at: " + fullPath);
-                    NativePluginWrapper.BRTSpatializerLoadHRTF(fullPath);
+                    if (!NativePluginWrapper.BRTSpatializerLoadHRTF(fullPath))
+                        Debug.LogError("BRT: Error loading HRTF");
                 }
                 else
                 {
                     Debug.LogError("BRT: Failed to extract SOFA file.");
                 }
-            }
-
-            if (!NativePluginWrapper.BRTSpatializerSetHRTF(0)) // TODO: Use resource index
-                Debug.LogError("BRT: Error setting HRTF");
+            }   
 
             // Load NFC filters
             foreach (var nfcFilter in configuration.nfcFilterResources)
@@ -94,17 +92,14 @@ namespace BRT
                 if (ResourceExtractor.ExtractToPersistentDataPath(filePath, filePath, out string fullPath))
                 {
                     Debug.Log("BRT: File ready at: " + fullPath);
-                    NativePluginWrapper.BRTSpatializerLoadNearFieldCompensationFilter(fullPath);
+                    if (!NativePluginWrapper.BRTSpatializerLoadNearFieldCompensationFilter(fullPath))
+                        Debug.LogError("BRT: Error setting Near Field Compensation Filter");
                 }
                 else
                 {
                     Debug.LogError("BRT: Failed to extract SOFA file.");
                 }
             }
-
-            if (!NativePluginWrapper.BRTSpatializerSetNearFieldCompensationFilter(0)) // TODO: Use resource index
-                Debug.LogError("BRT: Error setting Near Field Compensation Filter");
-
 
             foreach (var brir in configuration.brirResources)
             {
@@ -113,16 +108,14 @@ namespace BRT
                 if (ResourceExtractor.ExtractToPersistentDataPath(filePath, filePath, out string fullPath))
                 {
                     Debug.Log("BRT: File ready at: " + fullPath);
-                    NativePluginWrapper.BRTSpatializerLoadBRIR(fullPath);
+                    if (!NativePluginWrapper.BRTSpatializerLoadBRIR(fullPath))
+                        Debug.LogError("BRT: Error setting BRIR");
                 }
                 else
                 {
                     Debug.LogError("BRT: Failed to extract SOFA file.");
                 }
-            }
-
-            if (!NativePluginWrapper.BRTSpatializerSetBRIR(0)) // TODO: Use resource index
-                Debug.LogError("BRT: Error setting BRIR");
+            }   
         }
     }
 }
