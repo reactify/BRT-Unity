@@ -25,8 +25,7 @@ void SetErrorCallback (ErrorCallback cb)
 
 void BRTSpatializerResetIfNeeded (int sampleRate, int dspBufferSize)
 {
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
-        brtInstance->initOrReplace (sampleRate, dspBufferSize);
+    BRTLibraryWrapper::initOrReplace (sampleRate, dspBufferSize);
 }
 
 // TODO

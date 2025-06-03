@@ -161,8 +161,8 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK CreateCallback (UnityAudioEffectSt
     BRTLibraryWrapper::initOrReplace (state->samplerate, state->dspbuffersize);
     
     auto* brtInstance = BRTLibraryWrapper::instance();
-    auto instanceId = brtInstance->getNextSoundSourceId();
     
+    auto instanceId = brtInstance->getNextSoundSourceId();
     WriteLog ("BRT: Created Spatializer Source " + std::to_string (instanceId));
 
     state->spatializerdata->distanceattenuationcallback = DistanceAttenuationCallback;
@@ -239,12 +239,12 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK
 ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer,
                  unsigned int length, int inchannels, int outchannels)
 {
-    EffectData* data = state->GetEffectData<EffectData>();
-    
     auto* brtInstance = BRTLibraryWrapper::instance();
 
     if (! brtInstance || ! brtInstance->isCompatible (state->samplerate, state->dspbuffersize))
         return UNITY_AUDIODSP_ERR_UNSUPPORTED;
+ 
+    EffectData* data = state->GetEffectData<EffectData>();
     
 	// Set source and listener transform
     auto soundSource = brtInstance->brtManager.GetSoundSource (std::to_string (data->sourceID));

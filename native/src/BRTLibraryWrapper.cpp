@@ -10,6 +10,19 @@ inline void WriteLog (std::string logText)
     std::cerr << logText << std::endl;
 }
 
+// Scoped guard class to automatically turn processing on/off
+class ScopedSuspendProcessing
+{
+public:
+    explicit ScopedSuspendProcessing (BRTLibraryWrapper& w)
+      : wrapper (w)             { wrapper.suspendProcessing (true); }
+    ~ScopedSuspendProcessing()  { wrapper.suspendProcessing (false); }
+    ScopedSuspendProcessing (const ScopedSuspendProcessing&) = delete;
+    ScopedSuspendProcessing& operator=(const ScopedSuspendProcessing&) = delete;
+private:
+    BRTLibraryWrapper& wrapper;
+};
+
 //==============================================================================
 std::atomic<BRTLibraryWrapper*> BRTLibraryWrapper::brtInstance = nullptr;
 
@@ -28,6 +41,9 @@ BRTLibraryWrapper::BRTLibraryWrapper (int sampleRate_, int bufferSize_)
     
     globalParameters.SetSampleRate (sampleRate);
     globalParameters.SetBufferSize (bufferSize);
+    
+    outLeftBuffer.resize (bufferSize);
+    outRightBuffer.resize (bufferSize);
 }
 
 BRTLibraryWrapper::~BRTLibraryWrapper()
@@ -37,22 +53,32 @@ BRTLibraryWrapper::~BRTLibraryWrapper()
 
 void BRTLibraryWrapper::initOrReplace (int sampleRate, int bufferSize)
 {
-    BRTLibraryWrapper* existing = brtInstance.load (std::memory_order_acquire);
-
-    if (existing && existing->isCompatible (sampleRate, bufferSize))
-        return;
-
-    auto* newInstance = new BRTLibraryWrapper (sampleRate, bufferSize);
-
-    // Atomically replace the instance
-    if (auto* old = brtInstance.exchange (newInstance, std::memory_order_acq_rel))
-        delete old;
+    if (auto* oldInstance = brtInstance.load (std::memory_order_acquire))
+    {
+        if (! oldInstance->isCompatible (sampleRate, bufferSize))
+        {
+            const ScopedSuspendProcessing guard (*oldInstance);
+            
+            auto* newInstance = new BRTLibraryWrapper (sampleRate, bufferSize);
+            brtInstance.store (newInstance, std::memory_order_release);
+            
+            delete oldInstance;
+        }
+    }
+    else
+    {
+        auto* newInstance = new BRTLibraryWrapper (sampleRate, bufferSize);
+        brtInstance.store (newInstance, std::memory_order_release);
+    }
 }
 
 void BRTLibraryWrapper::destroy()
 {
-    if (auto* old = brtInstance.exchange (nullptr, std::memory_order_acq_rel))
-        delete old;
+    if (auto* oldInstance = brtInstance.exchange (nullptr, std::memory_order_acq_rel))
+    {
+        const ScopedSuspendProcessing guard (*oldInstance);
+        delete oldInstance;
+    }
 }
 
 bool BRTLibraryWrapper::isCompatible (int newSampleRate, int newBufferSize) const noexcept
@@ -60,8 +86,37 @@ bool BRTLibraryWrapper::isCompatible (int newSampleRate, int newBufferSize) cons
     return sampleRate == newSampleRate && bufferSize == newBufferSize;
 }
 
-void BRTLibraryWrapper::process (float* in, float* out, unsigned int len, int inCh, int outCh) noexcept
+void BRTLibraryWrapper::suspendProcessing (bool shouldBeSuspended) noexcept
 {
+    suspended.store (shouldBeSuspended, std::memory_order_release);
+}
+
+bool BRTLibraryWrapper::isSuspended() const noexcept
+{
+    return suspended.load (std::memory_order_acquire);
+}
+
+void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
+                                 unsigned int length, int inCh, int outCh) noexcept
+{
+    if (isSuspended())
+    {
+        std::fill (outBuffer, outBuffer + length * outCh, 0.0f);
+        return;
+    }
+    
+    brtManager.ProcessAll();
+    
+    if (listener)
+        listener->GetBuffers (outLeftBuffer, outRightBuffer);
+    else
+        WriteLog ("BRT: No listener found!!!");
+
+    for (size_t i = 0; i < length; ++i)
+    {
+        outBuffer[i * 2 + 0] = outLeftBuffer[i];
+        outBuffer[i * 2 + 1] = outRightBuffer[i];
+    }
 }
 
 int BRTLibraryWrapper::getNextSoundSourceId()

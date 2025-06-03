@@ -27,6 +27,10 @@ public:
     static void destroy();
 
     bool isCompatible (int sampleRate, int bufferSize) const noexcept;
+    
+    void suspendProcessing (bool shouldBeSuspended) noexcept;
+    
+    bool isSuspended() const noexcept;
 
     void process (float* in, float* out, unsigned int len, int inCh, int outCh) noexcept;
 
@@ -56,7 +60,10 @@ private:
     // std::vector<std::shared_ptr<BRTServices::CHRTF>> hrtfs;
     // std::vector<std::shared_ptr<BRTServices::CSOSFilters>> ilds;
     // std::vector<std::shared_ptr<BRTServices::CHRBRIR>> brirs;
+    CMonoBuffer<float> outLeftBuffer;
+    CMonoBuffer<float> outRightBuffer;
     std::bitset<128> soundSourceIds;
+    std::atomic<bool> suspended;
 };
 
 } // namespace BRTUnity
