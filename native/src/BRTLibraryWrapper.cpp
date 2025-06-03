@@ -10,18 +10,15 @@ inline void WriteLog (std::string logText)
     std::cerr << logText << std::endl;
 }
 
-// Scoped guard class to automatically turn processing on/off
-class ScopedSuspendProcessing
-{
-public:
-    explicit ScopedSuspendProcessing (BRTLibraryWrapper& w)
-      : wrapper (w)             { wrapper.suspendProcessing (true); }
-    ~ScopedSuspendProcessing()  { wrapper.suspendProcessing (false); }
-    ScopedSuspendProcessing (const ScopedSuspendProcessing&) = delete;
-    ScopedSuspendProcessing& operator=(const ScopedSuspendProcessing&) = delete;
-private:
-    BRTLibraryWrapper& wrapper;
-};
+ScopedManagerSetup::ScopedManagerSetup (BRTBase::CBRTManager& m)
+: manager (m)                       { manager.BeginSetup(); }
+ScopedManagerSetup::~ScopedManagerSetup() { manager.EndSetup(); }
+
+ScopedSuspendProcessing::ScopedSuspendProcessing (BRTLibraryWrapper& w)
+: wrapper (w)
+{ wrapper.suspendProcessing (true); }
+ScopedSuspendProcessing:: ~ScopedSuspendProcessing()
+{ wrapper.suspendProcessing (false); }
 
 //==============================================================================
 std::atomic<BRTLibraryWrapper*> BRTLibraryWrapper::brtInstance = nullptr;
@@ -111,7 +108,7 @@ void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
         listener->GetBuffers (outLeftBuffer, outRightBuffer);
     else
         WriteLog ("BRT: No listener found!!!");
-
+    
     for (size_t i = 0; i < length; ++i)
     {
         outBuffer[i * 2 + 0] = outLeftBuffer[i];
@@ -119,8 +116,45 @@ void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
     }
 }
 
+int BRTLibraryWrapper::addSoundSource()
+{
+    auto sourceId = getNextSoundSourceId();
+    
+    if (createSoundSource (std::to_string (sourceId).c_str()))
+        return sourceId;
+    
+    releaseSoundSourceId (sourceId);
+    return -1;
+}
+
+bool BRTLibraryWrapper::createSoundSource (const char* soundSourceId)
+{
+    const ScopedSuspendProcessing guard (*this);
+    const ScopedManagerSetup managerSetup (brtManager);
+    
+    if (auto soundSource = brtManager.CreateSoundSource<BRTSourceModel::CSourceSimpleModel> (soundSourceId))
+        return true;
+    
+    return false;
+}
+
+bool BRTLibraryWrapper::removeSoundSource (const char* soundSourceId)
+{
+    const ScopedSuspendProcessing guard (*this);
+    const ScopedManagerSetup managerSetup (brtManager);
+    
+    releaseSoundSourceId (std::stoi (soundSourceId));
+    
+    for (const auto& listenerModel : listenerModels)
+        listenerModel->DisconnectSoundSource (soundSourceId);
+    
+    return brtManager.RemoveSoundSource (soundSourceId);
+}
+
 int BRTLibraryWrapper::getNextSoundSourceId()
 {
+    std::lock_guard<std::mutex> lock (mutex);
+    
     for (int i = 0; i < soundSourceIds.size(); ++i)
     {
         if (! soundSourceIds.test (i))
@@ -134,7 +168,11 @@ int BRTLibraryWrapper::getNextSoundSourceId()
 
 void BRTLibraryWrapper::releaseSoundSourceId (int soundSourceId)
 {
+    if (soundSourceId < 0 || soundSourceId >= static_cast<int> (soundSourceIds.size()))
+        return;
+    
+    std::lock_guard<std::mutex> lock (mutex);
     soundSourceIds.reset (soundSourceId);
 }
 
-}
+} // namespace BRTUnity

@@ -162,7 +162,7 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK CreateCallback (UnityAudioEffectSt
     
     auto* brtInstance = BRTLibraryWrapper::instance();
     
-    auto instanceId = brtInstance->getNextSoundSourceId();
+    auto instanceId = brtInstance->addSoundSource();
     WriteLog ("BRT: Created Spatializer Source " + std::to_string (instanceId));
 
     state->spatializerdata->distanceattenuationcallback = DistanceAttenuationCallback;
@@ -181,17 +181,8 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK ReleaseCallback (UnityAudioEffectS
     {
         if (auto* brtInstance = BRTLibraryWrapper::instance())
         {
-            if (auto soundSource = brtInstance->brtManager.GetSoundSource (std::to_string (data->sourceID)))
-            {
-                const ScopedManagerSetup sm (brtInstance->brtManager);
-                
-                auto sourceId = soundSource->GetID();
-                
-                if (brtInstance->brtManager.RemoveSoundSource (sourceId))
-                    brtInstance->releaseSoundSourceId (std::stoi (sourceId));
-                else
-                    WriteLog ("BRT: Error removing sound source: " + sourceId);
-            }
+            WriteLog ("BRT: Removing Spatializer Source");
+            brtInstance->removeSoundSource (std::to_string (data->sourceID).c_str());
         }
         
         delete data;

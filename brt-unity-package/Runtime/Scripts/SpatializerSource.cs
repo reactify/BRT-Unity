@@ -41,7 +41,7 @@ namespace BRT
         {
             RefreshInstanceId();
             InitialiseIdentifiers();
-            CreateSoundSource();
+            // CreateSoundSource();
             ConnectToListenerModel();
             ConnectToListenerEnvironmentModel();
         }
@@ -92,6 +92,8 @@ namespace BRT
             listenerEnvironmentModelId = listenerEnvironmentModel.ModelID;
         }
 
+        // NOTE: Sound source is created internally by the spatializer plugin
+        // We leave this here for possible future use
         private void CreateSoundSource()
         {
             if (!NativePluginWrapper.BRTSpatializerCreateSoundSource(InstanceId.ToString()))

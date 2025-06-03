@@ -76,33 +76,17 @@ bool BRTSpatializerCreateListenerModel (int type, const char* listenerModelId)
         return false;
     }
     
-    auto& brtManager = brtInstance->brtManager;
-    
-    const ScopedManagerSetup sm (brtManager);
-    
     using namespace BRTListenerModel;
-    std::shared_ptr<CListenerModelBase> listenerModel = nullptr;
     
     switch (type)
     {
         case 0:
-            listenerModel = brtManager.CreateListenerModel<CListenerHRTFModel> (listenerModelId);
-            break;
+            return brtInstance->createListenerModel<CListenerHRTFModel> (listenerModelId);
         case 1:
-            listenerModel = brtManager.CreateListenerModel<CListenerAmbisonicEnvironmentBRIRModel> (listenerModelId);
-            break;
+            return brtInstance->createListenerModel<CListenerAmbisonicEnvironmentBRIRModel> (listenerModelId);
         default:
-            listenerModel = brtManager.CreateListenerModel<CListenerHRTFModel> (listenerModelId);
-            break;
+            return brtInstance->createListenerModel<CListenerHRTFModel> (listenerModelId);
     }
-    
-    if (listenerModel == nullptr)
-    {
-        WriteLog ("BRT: Error creating listener model");
-        return false;
-    }
-    
-    return true;
 }
 
 bool BRTSpatializerConnectListenerModel (const char* listenerId, const char* listenerModelId)
@@ -228,26 +212,11 @@ bool BRTSpatializerCreateSoundSource (const char* sourceId)
     auto sourceIDStr = std::string (sourceId);
     WriteLog ("BRT: Creating sound source: " + sourceIDStr);
     
-    auto* brtInstance = BRTLibraryWrapper::instance();
+    if (auto* brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->createSoundSource (sourceId);
     
-    if (brtInstance == nullptr)
-    {
-        WriteLog ("BRT Error: No spatializer instance found");
-        return false;
-    }
-    
-    auto& brtManager = brtInstance->brtManager;
-    const ScopedManagerSetup sm (brtManager);
-
-    auto soundSource = brtManager.CreateSoundSource<BRTSourceModel::CSourceSimpleModel> (sourceIDStr);
-
-    if (soundSource == nullptr)
-    {
-        WriteLog ("BRT: Error creating sound source: " + sourceIDStr);
-        return false;
-    }
-    
-    return true;
+    WriteLog ("BRT Error: No spatializer instance found");
+    return false;
 }
 
 bool BRTSpatializerConnectSoundSource (const char* soundSourceID, const char* listenerModelID)
