@@ -123,8 +123,8 @@ void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
     
     for (size_t i = 0; i < length; ++i)
     {
-        outBuffer[i * 2 + 0] = outLeftBuffer[i];
-        outBuffer[i * 2 + 1] = outRightBuffer[i];
+        outBuffer[i * 2 + 0] = inBuffer[i * 2 + 0] + outLeftBuffer[i];
+        outBuffer[i * 2 + 1] = inBuffer[i * 2 + 1] + outRightBuffer[i];
     }
 }
 
