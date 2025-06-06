@@ -11,13 +11,13 @@ inline void WriteLog (std::string logText)
 }
 
 ScopedManagerSetup::ScopedManagerSetup (BRTBase::CBRTManager& m)
-: manager (m)                       { manager.BeginSetup(); }
+: manager (m)                             { manager.BeginSetup(); }
 ScopedManagerSetup::~ScopedManagerSetup() { manager.EndSetup(); }
 
 ScopedSuspendProcessing::ScopedSuspendProcessing (BRTLibraryWrapper& w)
 : wrapper (w)
 { wrapper.suspendProcessing (true); }
-ScopedSuspendProcessing:: ~ScopedSuspendProcessing()
+ScopedSuspendProcessing::~ScopedSuspendProcessing()
 { wrapper.suspendProcessing (false); }
 
 //==============================================================================
@@ -102,6 +102,18 @@ void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
         return;
     }
     
+    if (params.hasChanged (lastParamVersion))
+    {
+        const Parameters& p = params.get();
+
+        if (p.bypassed)
+            return;
+
+        updateParameters (p);
+        
+        lastParamVersion = params.getVersion();
+    }
+    
     brtManager.ProcessAll();
     
     if (listener)
@@ -173,6 +185,46 @@ void BRTLibraryWrapper::releaseSoundSourceId (int soundSourceId)
     
     std::lock_guard<std::mutex> lock (mutex);
     soundSourceIds.reset (soundSourceId);
+}
+
+void BRTLibraryWrapper::updateParameters (const Parameters& params)
+{
+    if (! listener)
+        return;
+    
+    auto setEnabled = [] (auto* obj, bool enabled, auto enableMethod, auto disableMethod) noexcept
+    {
+        if (enabled)
+            (obj->*enableMethod)();
+        else
+            (obj->*disableMethod)();
+    };
+    
+    using namespace BRTBase;
+    
+    setEnabled (listener.get(), params.spatializationEnabled,
+                &CListener::EnableSpatialization,
+                &CListener::DisableSpatialization);
+    
+    setEnabled (listener.get(), params.interpolationEnabled,
+                &CListener::EnableInterpolation,
+                &CListener::DisableInterpolation);
+    
+    setEnabled (listener.get(), params.itdSimulationEnabled,
+                &CListener::EnableITDSimulation,
+                &CListener::DisableITDSimulation);
+    
+    setEnabled (listener.get(), params.nearFieldEffectEnabled,
+                &CListener::EnableNearFieldEffect,
+                &CListener::DisableNearFieldEffect);
+    
+    setEnabled (listener.get(), params.parallaxCorrectionEnabled,
+                &CListener::EnableParallaxCorrection,
+                &CListener::DisableParallaxCorrection);
+    
+    setEnabled (listener.get(), params.distanceAttenuationEnabled,
+                &CListener::EnableDistanceAttenuation,
+                &CListener::DisableDistanceAttenuation);
 }
 
 } // namespace BRTUnity
