@@ -2,9 +2,9 @@ namespace BRT
 {
     using UnityEngine;
 
-    public class BRTConfigurationLoader : MonoBehaviour
+    public class BRTManager : MonoBehaviour
     {
-        public static BRTConfigurationLoader Instance { get; private set; }
+        public static BRTManager Instance { get; private set; }
 
         public BRTConfiguration configuration;
 

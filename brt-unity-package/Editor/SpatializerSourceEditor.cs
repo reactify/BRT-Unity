@@ -1,8 +1,8 @@
-using UnityEditor;
-using UnityEngine;
-
 namespace BRT.Editor
 {
+    using UnityEditor;
+    using UnityEngine;
+    
     [CustomEditor(typeof(SpatializerSource))]
     public class SpatializerSourceEditor : UnityEditor.Editor
     {
@@ -13,7 +13,7 @@ namespace BRT.Editor
 
             if (config == null)
             {
-                EditorGUILayout.HelpBox("No configuration found. Ensure BRTConfigurationLoader.Instance is set.", MessageType.Warning);
+                EditorGUILayout.HelpBox("No configuration found. Ensure BRTManager.Instance is set.", MessageType.Warning);
                 return;
             }
 

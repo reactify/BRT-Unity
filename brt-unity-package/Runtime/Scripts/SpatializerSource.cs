@@ -22,7 +22,7 @@ namespace BRT
 #if UNITY_EDITOR
             if (!Application.isPlaying && configuration == null)
             {
-                var loader = FindFirstObjectByType<BRTConfigurationLoader>();
+                var loader = FindFirstObjectByType<BRTManager>();
                 if (loader != null)
                     configuration = loader.configuration;
             }
@@ -33,8 +33,8 @@ namespace BRT
         private void Awake()
         {
             audioSource = GetComponent<AudioSource>();
-            if (configuration == null && BRTConfigurationLoader.Instance != null)
-                configuration = BRTConfigurationLoader.Instance.configuration;
+            if (configuration == null && BRTManager.Instance != null)
+                configuration = BRTManager.Instance.configuration;
         }
 
         private void Start()
