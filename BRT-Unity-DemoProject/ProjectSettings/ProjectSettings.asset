@@ -141,10 +141,7 @@ PlayerSettings:
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
   bundleVersion: 1.0
-  preloadedAssets:
-  - {fileID: 5737424264447621343, guid: 350c092333f934548bcca900922cd611, type: 2}
-  - {fileID: 11400000, guid: 00fc2391b8d644d71a301261c4cd55b2, type: 2}
-  - {fileID: 3952815282040081387, guid: 14ade4180f5e74f769ad0c60dffe3779, type: 2}
+  preloadedAssets: []
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -167,6 +164,7 @@ PlayerSettings:
   androidMinAspectRatio: 1
   applicationIdentifier:
     Android: com.DefaultCompany.BRTUnity
+    Standalone: com.DefaultCompany.BRT-Unity
   buildNumber:
     Standalone: 0
     VisionOS: 0
@@ -769,7 +767,7 @@ PlayerSettings:
   qnxGraphicConfPath: 
   apiCompatibilityLevel: 6
   captureStartupLogs: {}
-  activeInputHandler: 0
+  activeInputHandler: 2
   windowsGamepadBackendHint: 0
   cloudProjectId: 
   framebufferDepthMemorylessMode: 0
