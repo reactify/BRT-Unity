@@ -93,8 +93,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 112000000, guid: cf4814c13152745baab50b280dc4af89,
-    type: 2}
+  m_LightingDataAsset: {fileID: 112000000, guid: cf4814c13152745baab50b280dc4af89, type: 2}
   m_LightingSettings: {fileID: 1689382516}
 --- !u!196 &4
 NavMeshSettings:
@@ -920,10 +919,54 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spherePivot: {fileID: 2126364867}
-  sphereEmitterPrefab: {fileID: 557572199126851045, guid: fd7264a18afaf4ed3814350daf9e2f68,
-    type: 3}
+  sphereEmitterPrefab: {fileID: 557572199126851045, guid: fd7264a18afaf4ed3814350daf9e2f68, type: 3}
   spawnOnAwake: 0
   spawnOnStart: 1
+--- !u!1 &871725246
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 871725248}
+  - component: {fileID: 871725247}
+  m_Layer: 0
+  m_Name: Test
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &871725247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 871725246}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3893122497f54c02bab4a2551f30add, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  configuration: {fileID: 11400000, guid: d3f4140fa95814161a08d53a8875a5de, type: 2}
+--- !u!4 &871725248
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 871725246}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -936,7 +979,6 @@ GameObject:
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
   - component: {fileID: 963194232}
-  - component: {fileID: 963194229}
   - component: {fileID: 963194233}
   m_Layer: 0
   m_Name: Main Camera
@@ -1019,58 +1061,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 413227101}
   m_LocalEulerAnglesHint: {x: 16.266, y: 0, z: 0}
---- !u!114 &963194229
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c0b0b66fe32e6446a7e3cb6e903d1b5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  spatializereCoreMixer: {fileID: 0}
-  spatializerParameters:
-  - 1
-  - 1
-  - 1
-  - 1
-  - 2
-  - 1
-  - 0
-  - 0.0875
-  - 1
-  - 0
-  - -6.02
-  - -6
-  - 343
-  - 15
-  - 15
-  - 0
-  - 0
-  - 1
-  - 15
-  - 0
-  - 1
-  - -3.01
-  highQualityHRTFPaths:
-  - Data/HighQuality/HRTF/3DTI_HRTF_IRC1008_512s_44100Hz.sofa.bytes
-  - Data/HighQuality/HRTF/3DTI_HRTF_IRC1008_512s_48000Hz.sofa.bytes
-  - Data/HighQuality/HRTF/3DTI_HRTF_IRC1008_512s_96000Hz.sofa.bytes
-  highQualityILDPaths:
-  - Data/HighQuality/ILD/NearFieldCompensation_ILD_44100.sofa.bytes
-  - Data/HighQuality/ILD/NearFieldCompensation_ILD_48000.sofa.bytes
-  - Data/HighQuality/ILD/NearFieldCompensation_ILD_96000.sofa.bytes
-  highPerformanceILDPaths:
-  - 
-  - 
-  - 
-  reverbBRIRPaths:
-  - Data/Reverb/BRIR/BRIR_Trapezoid_44100Hz.sofa.bytes
-  - Data/Reverb/BRIR/BRIR_Trapezoid_48000Hz.sofa.bytes
-  - Data/Reverb/BRIR/BRIR_Trapezoid_96000Hz.sofa.bytes
 --- !u!114 &963194232
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2348,3 +2338,4 @@ SceneRoots:
   - {fileID: 1315974547}
   - {fileID: 7444558}
   - {fileID: 769662298}
+  - {fileID: 871725248}
