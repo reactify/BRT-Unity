@@ -61,5 +61,26 @@ namespace BRT
 
         [DllImport(DLL_NAME)]
         public static extern bool BRTSpatializerConnectSoundSource (string soundSourceID, string listenerModelID);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTManagerSetBypassed (bool bypass);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTManagerSetSpatializationEnabled (bool bypass);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTManagerSetInterpolationEnabled (bool bypass);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTManagerSetITDSimulationEnabled (bool bypass);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTManagerSetNearFieldEffectEnabled (bool bypass);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTManagerSetParallaxCorrectionEnabled (bool bypass);
+
+        [DllImport(DLL_NAME)]
+        public static extern  bool BRTManagerSetDistanceAttenuationEnabled (bool bypass);
     }
 }
