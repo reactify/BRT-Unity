@@ -11,3 +11,4 @@ brt-unity-package/PackagesCache/
 
 # Ignore platform-specific stuff
 .DS_Store
+**/.idea/
