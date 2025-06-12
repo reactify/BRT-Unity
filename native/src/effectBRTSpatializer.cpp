@@ -256,7 +256,7 @@ ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer
 
     for (size_t i = 0; i < (size_t) length * std::max (inchannels, outchannels); ++i)
     {
-        outbuffer[i] = inbuffer[i];
+        outbuffer[i] = 0.0f;
     }
 
 	return UNITY_AUDIODSP_OK;
