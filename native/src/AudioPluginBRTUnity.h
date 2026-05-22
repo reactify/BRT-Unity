@@ -15,10 +15,10 @@ UNITY_AUDIODSP_EXPORT_API
 void BRTSpatializerResetIfNeeded (int sampleRate, int dspBufferSize);
 
 UNITY_AUDIODSP_EXPORT_API
-bool BRTSpatialiserSetFloat (int parameter, float value);
+bool BRTSpatializerSetFloat (int parameter, float value);
 
 UNITY_AUDIODSP_EXPORT_API
-bool BRTSpatialiserGetFloat (int parameter, float* value);
+bool BRTSpatializerGetFloat (int parameter, float* value);
 
 UNITY_AUDIODSP_EXPORT_API
 bool BRTSpatializerCreateListener (const char* listenerId);

@@ -29,13 +29,13 @@ void BRTSpatializerResetIfNeeded (int sampleRate, int dspBufferSize)
 }
 
 // TODO
-bool BRTSpatialiserSetFloat (int parameter, float value)
+bool BRTSpatializerSetFloat (int parameter, float value)
 {
     return false;
 }
 
 // TODO
-bool BRTSpatialiserGetFloat (int parameter, float* value)
+bool BRTSpatializerGetFloat (int parameter, float* value)
 {
     return false;
 }
