@@ -31,7 +31,7 @@ BRTLibraryWrapper* BRTLibraryWrapper::instance() noexcept
 BRTLibraryWrapper::BRTLibraryWrapper (int sampleRate_, int bufferSize_)
   : sampleRate (sampleRate_), bufferSize (bufferSize_)
 {
-    WriteLog ("BRT: BRTLibraryWrapper created for sampleRate "
+    WriteLog ("BRTLibraryWrapper created for sampleRate "
               + std::to_string (sampleRate)
               + " & bufferSize "
               + std::to_string (bufferSize));
@@ -119,7 +119,7 @@ void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
     if (listener)
         listener->GetBuffers (outLeftBuffer, outRightBuffer);
     else
-        WriteLog ("BRT: No listener found!!!");
+        WriteLog ("No listener found!!!");
     
     for (size_t i = 0; i < length; ++i)
     {

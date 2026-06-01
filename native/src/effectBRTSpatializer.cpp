@@ -163,7 +163,7 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK CreateCallback (UnityAudioEffectSt
     auto* brtInstance = BRTLibraryWrapper::instance();
     
     auto instanceId = brtInstance->addSoundSource();
-    WriteLog ("BRT: Created Spatializer Source " + std::to_string (instanceId));
+    WriteLog ("Created Spatializer Source " + std::to_string (instanceId));
 
     state->spatializerdata->distanceattenuationcallback = DistanceAttenuationCallback;
 
@@ -181,7 +181,7 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK ReleaseCallback (UnityAudioEffectS
     {
         if (auto* brtInstance = BRTLibraryWrapper::instance())
         {
-            WriteLog ("BRT: Removing Spatializer Source");
+            WriteLog ("Removing Spatializer Source");
             brtInstance->removeSoundSource (std::to_string (data->sourceID).c_str());
         }
         
@@ -204,14 +204,14 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK GetFloatParameterCallback (UnityAu
 		valuestr[0] = '\0';
 	}
     
-    WriteLog ("BRT: Getting float parameter " + std::to_string (index));
+    WriteLog ("Getting float parameter " + std::to_string (index));
 
 	if (value != NULL)
 	{
 		switch (static_cast<Parameter> (index))
 		{
             case InstanceId:
-                WriteLog ("BRT: Returning sourceID " + std::to_string (data->sourceID));
+                WriteLog ("Returning sourceID " + std::to_string (data->sourceID));
                 *value = (float) data->sourceID;
                 break;
             default:

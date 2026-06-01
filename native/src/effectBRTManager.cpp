@@ -45,7 +45,7 @@ namespace BRTManager
 
     UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK ReleaseCallback (UnityAudioEffectState* state)
     {
-        WriteLog ("BRT: DELETE MANAGER");
+        WriteLog ("DELETE MANAGER");
         
         BRTLibraryWrapper::destroy();
         
@@ -103,7 +103,7 @@ namespace BRTManager
 	{
 		if (inchannels != 2 || outchannels != 2)
 		{
-            WriteLog ("BRT: ERROR: Incorrect channel count in BRTManager plugin");
+            WriteLog ("ERROR: Incorrect channel count in BRTManager plugin");
 			return UNITY_AUDIODSP_ERR_UNSUPPORTED;
 		}
         
