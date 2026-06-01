@@ -176,10 +176,7 @@ namespace API_3DTI
     #else
         private const string DLL_NAME = "AudioPluginBRTUnity";
     #endif
-
-        [DllImport(DLL_NAME)]
-        private static extern bool BRTSpatializerLoadBinary(int role, string path, int sampleRate, int dspBufferSize);
-
+        
         [DllImport(DLL_NAME)]
         private static extern bool BRTSpatializerSetFloat(int parameterID, float value);
 
