@@ -58,7 +58,7 @@ namespace BRTManager
 	int InternalRegisterEffectDefinition (UnityAudioEffectDefinition& definition)
 	{
 		definition.paramdefs = new UnityAudioParameterDefinition[NumParameters];
-		RegisterParameter (definition, "Wetness", "", 0.0f, 1.0f, 0.5f,
+        AudioPluginUtil::RegisterParameter (definition, "Wetness", "", 0.0f, 1.0f, 0.5f,
                            1.0f, 1.0f, Wetness, "Ratio of reverb to dry audio in output mix");
 		return NumParameters;
 	}

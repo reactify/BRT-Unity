@@ -59,7 +59,7 @@ int InternalRegisterEffectDefinition (UnityAudioEffectDefinition& definition)
 {
     int numparams = 1; // FloatParameter::NumSourceParameters;
     definition.paramdefs = new UnityAudioParameterDefinition[NumParameters];
-    RegisterParameter (definition, "SourceID", "", -1.0f, 1e20f, -1.0f, 1.0f, 1.0f, 0, "Source ID for debug");
+    AudioPluginUtil::RegisterParameter (definition, "SourceID", "", -1.0f, 1e20f, -1.0f, 1.0f, 1.0f, 0, "Source ID for debug");
     //	RegisterParameter(definition, "HRTFInterp", "", 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, FloatParameter::EnableHRTFInterpolation, "HRTF Interpolation method");
     //	RegisterParameter(definition, "MODfarLPF", "", 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, FloatParameter::EnableFarDistanceLPF, "Far distance LPF module enabler");
     //	RegisterParameter(definition, "MODDistAtt", "", 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, FloatParameter::EnableDistanceAttenuationAnechoic, "Enable distance attenuation for anechoic processing");
