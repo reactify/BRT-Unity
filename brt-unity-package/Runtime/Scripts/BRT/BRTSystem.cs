@@ -22,11 +22,11 @@ namespace BRT
 
             if (!IsSpatializerActive())
             {
-                Debug.Log("BRT: Spatializer not active, skipping initialization");
+                Logger.LogWarning("Spatializer not active, skipping initialization");
                 return;
             }
 
-            Debug.Log("BRT.System.Initialize()");
+            Logger.LogInfo("BRT.System.Initialize()");
             _initialized = true;
 
             AudioSettings.GetDSPBufferSize(out int dspBufferSize, out _);
@@ -45,7 +45,7 @@ namespace BRT
             if (!_initialized)
                 return;
 
-            Debug.Log("BRT.System.Shutdown()");
+            Logger.LogInfo("BRT.System.Shutdown()");
 
             // Optional if your native plugin supports it
             NativePluginWrapper.BRTSpatializerDestroy();
@@ -96,7 +96,7 @@ namespace BRT
                         instanceId.ToString(),
                         listenerModel.ModelID))
                 {
-                    Debug.LogError("BRT: Failed to connect source to listener model");
+                    Logger.LogError("Failed to connect source to listener model");
                 }
             }
 
@@ -106,7 +106,7 @@ namespace BRT
                         instanceId.ToString(),
                         envModel.ModelID))
                 {
-                    Debug.LogError("BRT: Failed to connect source to environment model");
+                    Logger.LogError("Failed to connect source to environment model");
                 }
             }
         }
@@ -139,7 +139,7 @@ namespace BRT
 
             var directivity = cfg.directivityResources[directivityIndex];
 
-            Debug.Log($"BRT: Set directivity {directivity.sofaFile} for source {instanceId}");
+            Logger.LogInfo($"Set directivity {directivity.sofaFile} for source {instanceId}");
 
             // TODO: hook into native API when implemented
         }
@@ -154,11 +154,9 @@ namespace BRT
 
             if (_config == null)
             {
-                Debug.LogError("BRT: Default config not found (BRTDefault)");
+                Logger.LogError("Default config not found (BRTDefault)");
                 return;
             }
-
-            Debug.Log("BRT.System.LoadConfig()");
         }
 
         private static void ApplyConfig()
@@ -168,36 +166,34 @@ namespace BRT
 
             var listener = _config.listenerModels?[0];
             var listenerEnv = _config.listenerEnvironmentModels?[0];
-            
-            Debug.Log("BRT.System.ApplyConfig()");
 
             if (listener == null || listenerEnv == null)
             {
-                Debug.LogError("BRT: Invalid configuration");
+                Logger.LogError("Invalid configuration");
                 return;
             }
 
             // Create listener
             if (!NativePluginWrapper.BRTSpatializerCreateListener(listener.ListenerID))
-                Debug.LogError("BRT: Error creating listener");
+                Logger.LogError("Error creating listener");
 
             // Listener model
             if (!NativePluginWrapper.BRTSpatializerCreateListenerModel(0, listener.ModelID))
-                Debug.LogError("BRT: Error creating listener model");
+                Logger.LogError("Error creating listener model");
 
             if (!NativePluginWrapper.BRTSpatializerConnectListenerModel(
                     listener.ListenerID,
                     listener.ModelID))
-                Debug.LogError("BRT: Error connecting listener model");
+                Logger.LogError("Error connecting listener model");
 
             // Environment model
             if (!NativePluginWrapper.BRTSpatializerCreateListenerModel(1, listenerEnv.ModelID))
-                Debug.LogError("BRT: Error creating environment model");
+                Logger.LogError("Error creating environment model");
 
             if (!NativePluginWrapper.BRTSpatializerConnectListenerModel(
                     listener.ListenerID,
                     listenerEnv.ModelID))
-                Debug.LogError("BRT: Error connecting environment model");
+                Logger.LogError("Error connecting environment model");
 
             // HRTFs
             foreach (var hrtf in _config.hrtfResources)
@@ -207,7 +203,7 @@ namespace BRT
                 if (ResourceExtractor.ExtractToPersistentDataPath(path, path, out string fullPath))
                 {
                     if (!NativePluginWrapper.BRTSpatializerLoadHRTF(fullPath))
-                        Debug.LogError("BRT: Failed to load HRTF");
+                        Logger.LogError("Failed to load HRTF");
                 }
             }
 
@@ -219,7 +215,7 @@ namespace BRT
                 if (ResourceExtractor.ExtractToPersistentDataPath(path, path, out string fullPath))
                 {
                     if (!NativePluginWrapper.BRTSpatializerLoadNearFieldCompensationFilter(fullPath))
-                        Debug.LogError("BRT: Failed to load NFC");
+                        Logger.LogError("Failed to load NFC");
                 }
             }
 
@@ -231,7 +227,7 @@ namespace BRT
                 if (ResourceExtractor.ExtractToPersistentDataPath(path, path, out string fullPath))
                 {
                     if (!NativePluginWrapper.BRTSpatializerLoadBRIR(fullPath))
-                        Debug.LogError("BRT: Failed to load BRIR");
+                        Logger.LogError("Failed to load BRIR");
                 }
             }
         }
@@ -240,7 +236,6 @@ namespace BRT
         {
 #if UNITY_EDITOR || UNITY_STANDALONE || UNITY_IOS || UNITY_ANDROID
             var name = AudioSettings.GetSpatializerPluginName();
-            Debug.Log($"BRT: IsSpatializer active: {name}");
             return !string.IsNullOrEmpty(name);
 #else
             return false;

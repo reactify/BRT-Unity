@@ -6,11 +6,6 @@
 extern "C" {
 #endif
 
-typedef void(*ErrorCallback)(const char*);
-
-UNITY_AUDIODSP_EXPORT_API
-void SetErrorCallback (ErrorCallback cb);
-
 UNITY_AUDIODSP_EXPORT_API
 void BRTSpatializerResetIfNeeded (int sampleRate, int dspBufferSize);
 

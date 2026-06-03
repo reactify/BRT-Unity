@@ -48,7 +48,7 @@ namespace BRT
             directivityIndex = index;
 
             var directivity = configuration.directivityResources[directivityIndex];
-            Debug.Log("TODO: Load directivity");
+            Logger.LogWarning("TODO: Load directivity");
             // if (!string.IsNullOrEmpty(directivity.sofaFile))
         }
         

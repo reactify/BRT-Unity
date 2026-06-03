@@ -2,25 +2,13 @@
 #include "AudioPluginBRTUnity.h"
 #include "BRTLibraryWrapper.h"
 #include "AppUtils.h"
+#include "Logging.h"
 
 using namespace BRTUnity;
 
 inline void WriteLog (std::string logText)
 {
     std::cerr << "[BRT NATIVE] " << logText << std::endl;
-}
-
-ErrorCallback g_errorCallback = nullptr;
-
-void RaiseError (const char* msg)
-{
-    if (g_errorCallback)
-        g_errorCallback (msg);
-}
-
-void SetErrorCallback (ErrorCallback cb)
-{
-    g_errorCallback = cb;
 }
 
 void BRTSpatializerResetIfNeeded (int sampleRate, int dspBufferSize)
@@ -53,7 +41,7 @@ bool BRTSpatializerCreateListener (const char* listenerId)
     
     if (brtInstance == nullptr)
     {
-        RaiseError ("[BRTSpatializerCreateListener]: No Spatializer exists");
+        BRT_Log (2, "[BRTSpatializerCreateListener]: No Spatializer exists");
         return false;
     }
     
@@ -77,7 +65,7 @@ bool BRTSpatializerCreateListenerModel (int type, const char* listenerModelId)
     
     if (brtInstance == nullptr)
     {
-        RaiseError ("[BRTSpatializerCreateListener]: No Spatializer exists");
+        BRT_Log (2, "[BRTSpatializerCreateListener]: No Spatializer exists");
         return false;
     }
     
@@ -102,7 +90,7 @@ bool BRTSpatializerConnectListenerModel (const char* listenerId, const char* lis
     
     if (brtInstance == nullptr)
     {
-        RaiseError ("BRT Error: No spatializer instance found");
+        BRT_Log (2, "BRT Error: No spatializer instance found");
         return false;
     }
     
@@ -114,7 +102,7 @@ bool BRTSpatializerConnectListenerModel (const char* listenerId, const char* lis
         
         if (! listener->ConnectListenerModel (listenerModelId))
         {
-            RaiseError ("BRT: Error connecting listener model");
+            BRT_Log (2, "BRT: Error connecting listener model");
             return false;
         }
         
@@ -123,7 +111,7 @@ bool BRTSpatializerConnectListenerModel (const char* listenerId, const char* lis
         return true;
     }
     
-    RaiseError ("BRT: No listener found");
+    BRT_Log (2, "BRT: No listener found");
     
     return false;
 }
@@ -153,7 +141,7 @@ bool BRTSpatializerLoadHRTF (const char* hrtfFile) // TODO: return index?
     
     if (brtInstance == nullptr)
     {
-        RaiseError ("BRT Error: No spatializer instance found");
+        BRT_Log (2, "BRT Error: No spatializer instance found");
         return false;
     }
     
@@ -161,7 +149,7 @@ bool BRTSpatializerLoadHRTF (const char* hrtfFile) // TODO: return index?
     
     if (! AppUtils::LoadHRTFSofaFile (hrtfFile, hrtf))
     {
-        RaiseError ("BRT: Error loading SOFA HRTF");
+        BRT_Log (2, "BRT: Error loading SOFA HRTF");
         return false;
     }
     
@@ -181,7 +169,7 @@ bool BRTSpatializerLoadNearFieldCompensationFilter (const char* nfcFilterFile)
     
     if (brtInstance == nullptr)
     {
-        RaiseError ("BRT Error: No spatializer instance found");
+        BRT_Log (2, "BRT Error: No spatializer instance found");
         return false;
     }
     
@@ -189,7 +177,7 @@ bool BRTSpatializerLoadNearFieldCompensationFilter (const char* nfcFilterFile)
     
     if (! AppUtils::LoadNearFieldSOSFilter (nfcFilterFile, sosFilter))
     {
-        RaiseError ("BRT: Error loading SOFA NFC file");
+        BRT_Log (2, "BRT: Error loading SOFA NFC file");
         return false;
     }
     
@@ -209,7 +197,7 @@ bool BRTSpatializerLoadBRIR (const char* brirFile)
     
     if (brtInstance == nullptr)
     {
-        RaiseError ("BRT Error: No spatializer instance found");
+        BRT_Log (2, "BRT Error: No spatializer instance found");
         return false;
     }
     
@@ -217,14 +205,14 @@ bool BRTSpatializerLoadBRIR (const char* brirFile)
     
     if (! AppUtils::LoadBRIRSofaFile (brirFile, brir, 0,0,0,0))
     {
-        RaiseError ("BRT: Error loading SOFA BRIR");
+        BRT_Log (2, "BRT: Error loading SOFA BRIR");
         return false;
     }
     
     if (auto listener = brtInstance->listener)
         return listener->SetHRBRIR (brir);
 
-    RaiseError ("BRT: Error setting BRIR");
+    BRT_Log (2, "BRT: Error setting BRIR");
     
     return false;
 }
@@ -267,7 +255,7 @@ bool BRTSpatializerConnectSoundSource (const char* soundSourceID, const char* li
         }
     }
 
-    RaiseError ("Error connecting sound source. No listener found");
+    BRT_Log (2, "Error connecting sound source. No listener found");
     
     return false;
 }
