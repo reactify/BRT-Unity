@@ -28,6 +28,11 @@ void BRTSpatializerResetIfNeeded (int sampleRate, int dspBufferSize)
     BRTLibraryWrapper::initOrReplace (sampleRate, dspBufferSize);
 }
 
+void BRTSpatializerDestroy()
+{
+    BRTLibraryWrapper::destroy();
+}
+
 // TODO
 bool BRTSpatializerSetFloat (int parameter, float value)
 {

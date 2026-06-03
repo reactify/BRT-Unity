@@ -15,6 +15,9 @@ UNITY_AUDIODSP_EXPORT_API
 void BRTSpatializerResetIfNeeded (int sampleRate, int dspBufferSize);
 
 UNITY_AUDIODSP_EXPORT_API
+void BRTSpatializerDestroy();
+
+UNITY_AUDIODSP_EXPORT_API
 bool BRTSpatializerSetFloat (int parameter, float value);
 
 UNITY_AUDIODSP_EXPORT_API

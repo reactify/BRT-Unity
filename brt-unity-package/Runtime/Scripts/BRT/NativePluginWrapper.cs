@@ -39,6 +39,9 @@ namespace BRT
         public static extern void BRTSpatializerResetIfNeeded(int sampleRate, int dspBufferSize);
 
         [DllImport(DLL_NAME)]
+        public static extern void BRTSpatializerDestroy();
+
+        [DllImport(DLL_NAME)]
         public static extern bool BRTSpatializerCreateListener(string listenerId);
 
         [DllImport(DLL_NAME)]

@@ -19,22 +19,13 @@ namespace BRT
         [SerializeField] private BRTConfiguration configuration;
         public BRTConfiguration GetConfiguration()
         {
-#if UNITY_EDITOR
-            if (!Application.isPlaying && configuration == null)
-            {
-                var loader = FindFirstObjectByType<BRTManager>();
-                if (loader != null)
-                    configuration = loader.configuration;
-            }
-#endif
-            return configuration;
+            return BRTSystem.GetConfig();
         }
 
         private void Awake()
         {
             audioSource = GetComponent<AudioSource>();
-            if (configuration == null && BRTManager.Instance != null)
-                configuration = BRTManager.Instance.configuration;
+            configuration = GetConfiguration();
         }
 
         private void Start()
@@ -67,6 +58,8 @@ namespace BRT
                 instanceId = Mathf.RoundToInt(idFloat);
             else
                 Debug.LogWarning("[SpatialiserSource] Could not get instance ID from spatialiser plugin", this);
+            
+            Debug.Log("BRT: Instance id " + instanceId, this);
         }
 
         private void InitialiseIdentifiers()
