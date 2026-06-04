@@ -1,14 +1,10 @@
 
 #include "BRTLibraryWrapper.h"
 #include "AppUtils.h"
+#include "Logging.h"
 
 namespace BRTUnity
 {
-
-inline void WriteLog (std::string logText)
-{
-    std::cerr << logText << std::endl;
-}
 
 ScopedManagerSetup::ScopedManagerSetup (BRTBase::CBRTManager& m)
 : manager (m)                             { manager.BeginSetup(); }
@@ -31,7 +27,7 @@ BRTLibraryWrapper* BRTLibraryWrapper::instance() noexcept
 BRTLibraryWrapper::BRTLibraryWrapper (int sampleRate_, int bufferSize_)
   : sampleRate (sampleRate_), bufferSize (bufferSize_)
 {
-    WriteLog ("BRTLibraryWrapper created for sampleRate "
+    BRT_Log (0, "BRTLibraryWrapper created for sampleRate "
               + std::to_string (sampleRate)
               + " & bufferSize "
               + std::to_string (bufferSize));
@@ -119,7 +115,7 @@ void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
     if (listener)
         listener->GetBuffers (outLeftBuffer, outRightBuffer);
     else
-        WriteLog ("No listener found!!!");
+        BRT_Log (1, "No listener found!!!");
     
     for (size_t i = 0; i < length; ++i)
     {

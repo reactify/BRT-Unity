@@ -21,6 +21,11 @@ void BRT_Log (int level, const char* message)
 
     if (cb != nullptr)
     {
-        cb(level, message);
+        cb (level, message);
     }
+}
+
+void BRT_Log (int level, std::string message)
+{
+    BRT_Log (level, message.c_str());
 }
