@@ -5,6 +5,7 @@ native/**/obj/
 native/**/dist/
 native/**/CMakeFiles/
 native/**/CMakeCache.txt
+native/build
 
 # Unity package build cache
 brt-unity-package/PackagesCache/
