@@ -1,5 +1,6 @@
 
 #pragma once
+
 #include "AudioPluginInterface.h"
 
 #ifdef __cplusplus

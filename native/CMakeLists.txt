@@ -95,6 +95,8 @@ add_library(AudioPluginBRTUnity ${LIB_TYPE}
 # Includes
 target_include_directories(AudioPluginBRTUnity PRIVATE
     ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/internal
+    ${CMAKE_SOURCE_DIR}/src/unity
     "${BRT_LIBRARY_DIR}/include"
     "${BRT_LIBRARY_DIR}/include/third_party_libraries"
     "${BRT_LIBRARY_DIR}/include/third_party_libraries/eigen"
@@ -138,11 +140,6 @@ if(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 # iOS (Static Library)
 # -------------------------
 elseif(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "iOS")
-
-    message(STATUS "APPLE=${APPLE}")
-    message(STATUS "CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
-    message(STATUS "CMAKE_OSX_SYSROOT=${CMAKE_OSX_SYSROOT}")
-    message(STATUS "HEEEEEELLLLLLLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
 
     target_link_libraries(AudioPluginBRTUnity PRIVATE
         z
