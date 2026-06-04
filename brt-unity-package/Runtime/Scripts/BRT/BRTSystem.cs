@@ -8,14 +8,15 @@ namespace BRT
         private static bool _initialized;
         private static BRTConfiguration _config;
 
-        // Track active spatializer sources
-        private static readonly HashSet<int> _activeSources = new HashSet<int>();
+        private static int _dspBufferSize;
 
         // --------------------------------------------------------------------
         // Public API
         // --------------------------------------------------------------------
 
-        public static void Initialize()
+        public static BRTConfiguration ActiveConfig => _config;
+
+        public static void Initialize(BRTConfiguration config = null)
         {
             if (_initialized)
                 return;
@@ -29,15 +30,18 @@ namespace BRT
             Logger.LogInfo("BRT.System.Initialize()");
             _initialized = true;
 
-            AudioSettings.GetDSPBufferSize(out int dspBufferSize, out _);
+            AudioSettings.GetDSPBufferSize(out _dspBufferSize, out _);
 
             NativePluginWrapper.BRTSpatializerResetIfNeeded(
                 AudioSettings.outputSampleRate,
-                dspBufferSize
+                _dspBufferSize
             );
 
-            LoadConfig();
-            ApplyConfig();
+            // Always resolve a config and apply it
+            if (config == null)
+                config = Resources.Load<BRTConfiguration>("BRTDefault");
+
+            SetConfig(config, reset: false);
         }
 
         public static void Shutdown()
@@ -47,122 +51,74 @@ namespace BRT
 
             Logger.LogInfo("BRT.System.Shutdown()");
 
-            // Optional if your native plugin supports it
             NativePluginWrapper.BRTSpatializerDestroy();
 
-            _activeSources.Clear();
             _initialized = false;
+            _config = null;
         }
 
         public static void ResetStatics()
         {
             _initialized = false;
             _config = null;
-            _activeSources.Clear();
-        }
-
-        public static BRTConfiguration GetConfig()
-        {
-            if (_config == null)
-                _config = Resources.Load<BRTConfiguration>("BRTDefault");
-
-            return _config;
         }
 
         // --------------------------------------------------------------------
-        // Source lifecycle
+        // Config
         // --------------------------------------------------------------------
 
-        public static void RegisterSource(int instanceId)
+        public static void SetConfig(BRTConfiguration config, bool reset = true)
         {
-            if (!_initialized || instanceId < 0)
-                return;
-
-            if (_activeSources.Contains(instanceId))
-                return;
-
-            _activeSources.Add(instanceId);
-
-            var cfg = GetConfig();
-            if (cfg == null)
-                return;
-
-            var listenerModel = cfg.listenerModels?[0];
-            var envModel = cfg.listenerEnvironmentModels?[0];
-
-            if (listenerModel != null)
+            if (config == null)
             {
-                if (!NativePluginWrapper.BRTSpatializerConnectSoundSource(
-                        instanceId.ToString(),
-                        listenerModel.ModelID))
-                {
-                    Logger.LogError("Failed to connect source to listener model");
-                }
+                Logger.LogError("SetConfig called with null config");
+                return;
             }
 
-            if (envModel != null)
+            Logger.LogInfo($"SetConfig: {config.name}");
+
+            if (_initialized && reset)
             {
-                if (!NativePluginWrapper.BRTSpatializerConnectSoundSource(
-                        instanceId.ToString(),
-                        envModel.ModelID))
-                {
-                    Logger.LogError("Failed to connect source to environment model");
-                }
+                Logger.LogInfo("Resetting spatializer state");
+
+                NativePluginWrapper.BRTSpatializerResetIfNeeded(
+                    AudioSettings.outputSampleRate,
+                    _dspBufferSize
+                );
             }
+
+            _config = config;
+
+            if (_initialized)
+                ApplyCurrentConfig();
         }
 
-        public static void UnregisterSource(int instanceId)
+        public static void SetConfig(string resourcePath, bool reset = true)
         {
-            if (instanceId < 0)
-                return;
+            var config = Resources.Load<BRTConfiguration>(resourcePath);
 
-            if (_activeSources.Remove(instanceId))
+            if (config == null)
             {
-                // Optional native cleanup if available
-                // NativePluginWrapper.BRTSpatializerRemoveSoundSource(instanceId.ToString());
+                Logger.LogError($"Config not found at Resources/{resourcePath}");
+                return;
             }
-        }
 
-        public static void SetSourceDirectivity(int instanceId, int directivityIndex)
-        {
-            if (!_initialized || instanceId < 0)
-                return;
-
-            var cfg = GetConfig();
-            if (cfg == null)
-                return;
-
-            if (cfg.directivityResources == null ||
-                directivityIndex < 0 ||
-                directivityIndex >= cfg.directivityResources.Count)
-                return;
-
-            var directivity = cfg.directivityResources[directivityIndex];
-
-            Logger.LogInfo($"Set directivity {directivity.sofaFile} for source {instanceId}");
-
-            // TODO: hook into native API when implemented
+            SetConfig(config, reset);
         }
 
         // --------------------------------------------------------------------
         // Internal
         // --------------------------------------------------------------------
 
-        private static void LoadConfig()
+        private static void ApplyCurrentConfig()
         {
-            _config = Resources.Load<BRTConfiguration>("BRTDefault");
-
             if (_config == null)
             {
-                Logger.LogError("Default config not found (BRTDefault)");
+                Logger.LogError("ApplyCurrentConfig called with null config");
                 return;
             }
-        }
 
-        private static void ApplyConfig()
-        {
-            if (_config == null)
-                return;
+            Logger.LogInfo($"Applying config: {_config.name}");
 
             var listener = _config.listenerModels?[0];
             var listenerEnv = _config.listenerEnvironmentModels?[0];
@@ -173,61 +129,69 @@ namespace BRT
                 return;
             }
 
-            // Create listener
-            if (!NativePluginWrapper.BRTSpatializerCreateListener(listener.ListenerID))
-                Logger.LogError("Error creating listener");
+            // Listener
+            NativePluginWrapper.BRTSpatializerCreateListener(listener.ListenerID);
+            NativePluginWrapper.BRTSpatializerCreateListenerModel(0, listener.ModelID);
+            NativePluginWrapper.BRTSpatializerConnectListenerModel(
+                listener.ListenerID,
+                listener.ModelID);
 
-            // Listener model
-            if (!NativePluginWrapper.BRTSpatializerCreateListenerModel(0, listener.ModelID))
-                Logger.LogError("Error creating listener model");
+            // Environment
+            NativePluginWrapper.BRTSpatializerCreateListenerModel(1, listenerEnv.ModelID);
+            NativePluginWrapper.BRTSpatializerConnectListenerModel(
+                listener.ListenerID,
+                listenerEnv.ModelID);
 
-            if (!NativePluginWrapper.BRTSpatializerConnectListenerModel(
-                    listener.ListenerID,
-                    listener.ModelID))
-                Logger.LogError("Error connecting listener model");
+            // Resources
+            LoadResourceGroup(
+                _config.hrtfResources,
+                BRTConfiguration.HRTFResourceFolder,
+                r => r.sofaFile,
+                NativePluginWrapper.BRTSpatializerLoadHRTF,
+                "HRTF"
+            );
 
-            // Environment model
-            if (!NativePluginWrapper.BRTSpatializerCreateListenerModel(1, listenerEnv.ModelID))
-                Logger.LogError("Error creating environment model");
+            LoadResourceGroup(
+                _config.nfcFilterResources,
+                BRTConfiguration.NFCFilterResourceFolder,
+                r => r.sofaFile,
+                NativePluginWrapper.BRTSpatializerLoadNearFieldCompensationFilter,
+                "NFC"
+            );
 
-            if (!NativePluginWrapper.BRTSpatializerConnectListenerModel(
-                    listener.ListenerID,
-                    listenerEnv.ModelID))
-                Logger.LogError("Error connecting environment model");
+            LoadResourceGroup(
+                _config.brirResources,
+                BRTConfiguration.BRIRResourceFolder,
+                r => r.sofaFile,
+                NativePluginWrapper.BRTSpatializerLoadBRIR,
+                "BRIR"
+            );
+        }
 
-            // HRTFs
-            foreach (var hrtf in _config.hrtfResources)
+        private static void LoadResourceGroup<T>(
+            IList<T> resources,
+            string baseFolder,
+            System.Func<T, string> fileSelector,
+            System.Func<string, bool> loader,
+            string label)
+        {
+            if (resources == null)
+                return;
+
+            foreach (var res in resources)
             {
-                string path = BRTConfiguration.HRTFResourceFolder + hrtf.sofaFile;
+                string sofaFile = fileSelector(res);
+                string path = baseFolder + sofaFile;
 
-                if (ResourceExtractor.ExtractToPersistentDataPath(path, path, out string fullPath))
+                if (!ResourceExtractor.ExtractToPersistentDataPath(path, path, out string fullPath))
                 {
-                    if (!NativePluginWrapper.BRTSpatializerLoadHRTF(fullPath))
-                        Logger.LogError("Failed to load HRTF");
+                    Logger.LogError($"[{label}] Failed to extract: {sofaFile}");
+                    continue;
                 }
-            }
 
-            // NFC
-            foreach (var nfc in _config.nfcFilterResources)
-            {
-                string path = BRTConfiguration.NFCFilterResourceFolder + nfc.sofaFile;
-
-                if (ResourceExtractor.ExtractToPersistentDataPath(path, path, out string fullPath))
+                if (!loader(fullPath))
                 {
-                    if (!NativePluginWrapper.BRTSpatializerLoadNearFieldCompensationFilter(fullPath))
-                        Logger.LogError("Failed to load NFC");
-                }
-            }
-
-            // BRIR
-            foreach (var brir in _config.brirResources)
-            {
-                string path = BRTConfiguration.BRIRResourceFolder + brir.sofaFile;
-
-                if (ResourceExtractor.ExtractToPersistentDataPath(path, path, out string fullPath))
-                {
-                    if (!NativePluginWrapper.BRTSpatializerLoadBRIR(fullPath))
-                        Logger.LogError("Failed to load BRIR");
+                    Logger.LogError($"[{label}] Failed to load: {sofaFile}");
                 }
             }
         }

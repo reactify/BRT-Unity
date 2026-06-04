@@ -19,7 +19,7 @@ namespace BRT
         [SerializeField] private BRTConfiguration configuration;
         public BRTConfiguration GetConfiguration()
         {
-            return BRTSystem.GetConfig();
+            return BRTSystem.ActiveConfig;
         }
 
         private void Awake()
