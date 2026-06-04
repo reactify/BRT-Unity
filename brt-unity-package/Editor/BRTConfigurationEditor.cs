@@ -15,6 +15,19 @@ namespace BRT.Editor
         private SerializedProperty listenerModels;
         private SerializedProperty listenerEnvironmentModels;
 
+        // --------------------------------------------------------------------
+        // CACHES
+        // --------------------------------------------------------------------
+
+        private static readonly Dictionary<string, List<string>> _sofaCache = new();
+
+        private static readonly Dictionary<string, string> _popupLabels = new()
+        {
+            { "HRTFResourceIndex", "HRTF" },
+            { "NFCResourceIndex", "NFC Filter" },
+            { "BRIRResourceIndex", "BRIR" }
+        };
+
         private void OnEnable()
         {
             hrtfResources = serializedObject.FindProperty("hrtfResources");
@@ -44,7 +57,7 @@ namespace BRT.Editor
 
             EditorGUILayout.Space(10);
 
-            EditorGUILayout.LabelField("NFCFilter Resources", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("NFC Filter Resources", EditorStyles.boldLabel);
             DrawResourceList(nfcFilterResources, BRTConfiguration.NFCFilterResourceFolder);
 
             EditorGUILayout.Space(20);
@@ -54,50 +67,48 @@ namespace BRT.Editor
             serializedObject.ApplyModifiedProperties();
         }
 
+        // --------------------------------------------------------------------
+        // RESOURCE LIST UI
+        // --------------------------------------------------------------------
+
         private void DrawResourceList(SerializedProperty listProp, string resourcePath)
         {
-            List<string> sofaOptions = LoadSofaOptions(resourcePath);
+            var sofaOptions = GetSofaOptions(resourcePath);
 
-            if (sofaOptions == null || sofaOptions.Count == 0)
+            if (sofaOptions.Count == 0)
             {
-                EditorGUILayout.HelpBox($"No SOFA files found in: Resources/{resourcePath}", MessageType.Warning);
+                EditorGUILayout.HelpBox(
+                    $"No SOFA files found in: Resources/{resourcePath}",
+                    MessageType.Warning);
+
                 if (GUILayout.Button("Add Entry"))
-                {
                     listProp.InsertArrayElementAtIndex(listProp.arraySize);
-                }
+
                 return;
             }
 
             for (int i = 0; i < listProp.arraySize; i++)
             {
-                SerializedProperty element = listProp.GetArrayElementAtIndex(i);
+                var element = listProp.GetArrayElementAtIndex(i);
 
                 EditorGUILayout.BeginVertical("box");
 
-                SerializedProperty sofaProp = element.FindPropertyRelative("sofaFile");
+                var sofaProp = element.FindPropertyRelative("sofaFile");
 
-                int selected = Mathf.Max(0, sofaOptions.IndexOf(sofaProp.stringValue));
-                int newSelected = EditorGUILayout.Popup("SOFA File", selected, sofaOptions.ToArray());
-                sofaProp.stringValue = newSelected >= 0 ? sofaOptions[newSelected] : "";
+                int selectedIndex = Mathf.Max(0, sofaOptions.IndexOf(sofaProp.stringValue));
+                int newIndex = EditorGUILayout.Popup("SOFA File", selectedIndex, sofaOptions.ToArray());
 
-                SerializedProperty propCopy = element.Copy();
-                SerializedProperty endProp = propCopy.GetEndProperty();
+                sofaProp.stringValue =
+                    (newIndex >= 0 && newIndex < sofaOptions.Count)
+                        ? sofaOptions[newIndex]
+                        : "";
 
-                propCopy.NextVisible(true);
-
-                while (!SerializedProperty.EqualContents(propCopy, endProp))
-                {
-                    if (propCopy.name != "sofaFile")
-                    {
-                        EditorGUILayout.PropertyField(propCopy, true);
-                    }
-
-                    if (!propCopy.NextVisible(false)) break;
-                }
+                DrawRemainingFields(element);
 
                 if (GUILayout.Button("Remove"))
                 {
                     listProp.DeleteArrayElementAtIndex(i);
+                    EditorGUILayout.EndVertical();
                     break;
                 }
 
@@ -105,33 +116,43 @@ namespace BRT.Editor
             }
 
             if (GUILayout.Button("Add Entry"))
-            {
                 listProp.InsertArrayElementAtIndex(listProp.arraySize);
+        }
+
+        private void DrawRemainingFields(SerializedProperty element)
+        {
+            SerializedProperty copy = element.Copy();
+            SerializedProperty end = copy.GetEndProperty();
+
+            copy.NextVisible(true);
+
+            while (!SerializedProperty.EqualContents(copy, end))
+            {
+                if (copy.name != "sofaFile")
+                    EditorGUILayout.PropertyField(copy, true);
+
+                if (!copy.NextVisible(false))
+                    break;
             }
         }
 
-        private List<string> LoadSofaOptions(string resourcePath)
-        {
-            return Resources.LoadAll<TextAsset>(resourcePath)
-                .Select(sofa => sofa.name)
-                .ToList();
-        }
+        // --------------------------------------------------------------------
+        // LISTENER UI
+        // --------------------------------------------------------------------
 
         private void DrawListenerModels()
         {
             if (listenerModels == null || listenerModels.arraySize == 0)
                 return;
 
-            SerializedProperty modelProp = listenerModels.GetArrayElementAtIndex(0);
             EditorGUILayout.LabelField("Listener Model", EditorStyles.boldLabel);
-            DrawListenerModel(modelProp);
+            DrawListenerModel(listenerModels.GetArrayElementAtIndex(0));
 
             if (listenerEnvironmentModels == null || listenerEnvironmentModels.arraySize == 0)
                 return;
 
-            modelProp = listenerEnvironmentModels.GetArrayElementAtIndex(0);
             EditorGUILayout.LabelField("Listener Environment Model", EditorStyles.boldLabel);
-            DrawListenerModel(modelProp);
+            DrawListenerModel(listenerEnvironmentModels.GetArrayElementAtIndex(0));
         }
 
         private void DrawListenerModel(SerializedProperty modelProp)
@@ -139,22 +160,19 @@ namespace BRT.Editor
             EditorGUI.indentLevel++;
 
             SerializedProperty prop = modelProp.Copy();
-            SerializedProperty endProp = prop.GetEndProperty();
+            SerializedProperty end = prop.GetEndProperty();
+
             prop.NextVisible(true);
 
-            while (!SerializedProperty.EqualContents(prop, endProp))
+            while (!SerializedProperty.EqualContents(prop, end))
             {
-                var popupConfigs = new Dictionary<string, (string label, string[] options)>
+                if (_popupLabels.TryGetValue(prop.name, out var label))
                 {
-                    { "HRTFResourceIndex",  ("HRTF",       GetSofaFileNames(hrtfResources)) },
-                    { "NFCResourceIndex",   ("NFC Filter", GetSofaFileNames(nfcFilterResources)) },
-                    { "BRIRResourceIndex",  ("BRIR",       GetSofaFileNames(brirResources)) }
-                };
+                    string[] options = GetSofaFileNamesForField(prop.name);
 
-                if (popupConfigs.TryGetValue(prop.name, out var config))
-                {
-                    int index = Mathf.Clamp(prop.intValue, 0, Mathf.Max(0, config.options.Length - 1));
-                    index = EditorGUILayout.Popup(config.label, index, config.options);
+                    int index = Mathf.Clamp(prop.intValue, 0, Mathf.Max(0, options.Length - 1));
+                    index = EditorGUILayout.Popup(label, index, options);
+
                     prop.intValue = index;
                 }
                 else
@@ -162,22 +180,56 @@ namespace BRT.Editor
                     EditorGUILayout.PropertyField(prop, true);
                 }
 
-                if (!prop.NextVisible(false)) break;
+                if (!prop.NextVisible(false))
+                    break;
             }
 
             EditorGUI.indentLevel--;
         }
 
-        private string[] GetSofaFileNames(SerializedProperty list)
+        // --------------------------------------------------------------------
+        // DATA HELPERS
+        // --------------------------------------------------------------------
+
+        private List<string> GetSofaOptions(string resourcePath)
         {
-            var names = new List<string>();
+            if (_sofaCache.TryGetValue(resourcePath, out var cached))
+                return cached;
+
+            var result = Resources.LoadAll<TextAsset>(resourcePath)
+                .Select(x => x.name)
+                .ToList();
+
+            _sofaCache[resourcePath] = result;
+            return result;
+        }
+
+        private string[] GetSofaFileNamesForField(string fieldName)
+        {
+            SerializedProperty list = fieldName switch
+            {
+                "HRTFResourceIndex" => hrtfResources,
+                "NFCResourceIndex" => nfcFilterResources,
+                "BRIRResourceIndex" => brirResources,
+                _ => null
+            };
+
+            if (list == null)
+                return new[] { "<None>" };
+
+            var names = new string[list.arraySize];
+
             for (int i = 0; i < list.arraySize; i++)
             {
                 var element = list.GetArrayElementAtIndex(i);
-                var sofaProp = element.FindPropertyRelative("sofaFile");
-                names.Add(!string.IsNullOrEmpty(sofaProp?.stringValue) ? sofaProp.stringValue : "<Missing>");
+                var sofa = element.FindPropertyRelative("sofaFile");
+
+                names[i] = !string.IsNullOrEmpty(sofa.stringValue)
+                    ? sofa.stringValue
+                    : "<Missing>";
             }
-            return names.ToArray();
+
+            return names;
         }
     }
 }
