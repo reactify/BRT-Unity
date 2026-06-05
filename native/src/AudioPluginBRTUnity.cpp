@@ -6,18 +6,15 @@
 
 using namespace BRTUnity;
 
-inline void WriteLog (std::string logText)
-{
-    std::cerr << "[BRT NATIVE] " << logText << std::endl;
-}
-
 void BRTSpatializerResetIfNeeded (int sampleRate, int dspBufferSize)
 {
+    BRT_Log (0, "BRTSpatializerResetIfNeeded");
     BRTLibraryWrapper::initOrReplace (sampleRate, dspBufferSize);
 }
 
 void BRTSpatializerDestroy()
 {
+    BRT_Log (0, "BRTSpatializerDestroy");
     BRTLibraryWrapper::destroy();
 }
 
@@ -35,7 +32,7 @@ bool BRTSpatializerGetFloat (int parameter, float* value)
 
 bool BRTSpatializerCreateListener (const char* listenerId)
 {
-    WriteLog ("Creating Listener: " +  std::string (listenerId));
+    BRT_Log (0, "Creating Listener: " +  std::string (listenerId));
     
     auto* brtInstance = BRTLibraryWrapper::instance();
     
@@ -59,7 +56,7 @@ bool BRTSpatializerCreateListener (const char* listenerId)
 
 bool BRTSpatializerCreateListenerModel (int type, const char* listenerModelId)
 {
-    WriteLog ("Creating Listener Model: " +  std::string (listenerModelId));
+    BRT_Log (0, "Creating Listener Model: " +  std::string (listenerModelId));
     
     auto* brtInstance = BRTLibraryWrapper::instance();
     
@@ -84,7 +81,7 @@ bool BRTSpatializerCreateListenerModel (int type, const char* listenerModelId)
 
 bool BRTSpatializerConnectListenerModel (const char* listenerId, const char* listenerModelId)
 {
-    WriteLog ("Connecting Listener Model: " +  std::string (listenerModelId) + " to listener: " + std::string (listenerId));
+    BRT_Log (0, "Connecting Listener Model: " +  std::string (listenerModelId) + " to listener: " + std::string (listenerId));
     
     auto* brtInstance = BRTLibraryWrapper::instance();
     
@@ -106,7 +103,7 @@ bool BRTSpatializerConnectListenerModel (const char* listenerId, const char* lis
             return false;
         }
         
-        WriteLog ("Connected listener model " + std::string (listenerModelId));
+        BRT_Log (0,"Connected listener model " + std::string (listenerModelId));
         
         return true;
     }
@@ -135,7 +132,7 @@ bool BRTSpatializerSetListenerModelEnabled (const char* listenerModelId, bool en
 
 bool BRTSpatializerLoadHRTF (const char* hrtfFile) // TODO: return index?
 {
-    WriteLog ("Loading HRTF " +  std::string (hrtfFile));
+    BRT_Log (0, "Loading HRTF " +  std::string (hrtfFile));
     
     auto* brtInstance = BRTLibraryWrapper::instance();
     
@@ -156,14 +153,14 @@ bool BRTSpatializerLoadHRTF (const char* hrtfFile) // TODO: return index?
     if (auto listener = brtInstance->listener)
         return listener->SetHRTF (hrtf);
 
-    WriteLog ("Error setting HRTF");
+    BRT_Log (2, "Error setting HRTF");
     
     return false;
 }
 
 bool BRTSpatializerLoadNearFieldCompensationFilter (const char* nfcFilterFile)
 {
-    WriteLog ("Loading NFC Filter " +  std::string (nfcFilterFile));
+    BRT_Log (0, "Loading NFC Filter " +  std::string (nfcFilterFile));
     
     auto* brtInstance = BRTLibraryWrapper::instance();
     
@@ -184,14 +181,14 @@ bool BRTSpatializerLoadNearFieldCompensationFilter (const char* nfcFilterFile)
     if (auto listener = brtInstance->listener)
         return listener->SetNearFieldCompensationFilters (sosFilter);
 
-    WriteLog ("Error setting NFC Filter");
+    BRT_Log (2, "Error setting NFC Filter");
     
     return true;
 }
 
 bool BRTSpatializerLoadBRIR (const char* brirFile)
 {
-    WriteLog ("Loading BRIR " +  std::string (brirFile));
+    BRT_Log (0, "Loading BRIR " +  std::string (brirFile));
     
     auto* brtInstance = BRTLibraryWrapper::instance();
     
@@ -220,30 +217,30 @@ bool BRTSpatializerLoadBRIR (const char* brirFile)
 bool BRTSpatializerCreateSoundSource (const char* sourceId)
 {
     auto sourceIDStr = std::string (sourceId);
-    WriteLog ("Creating sound source: " + sourceIDStr);
+    BRT_Log (0, "Creating sound source: " + sourceIDStr);
     
     if (auto* brtInstance = BRTLibraryWrapper::instance())
         return brtInstance->createSoundSource (sourceId);
     
-    WriteLog ("BRT Error: No spatializer instance found");
+    BRT_Log (2, "BRT Error: No spatializer instance found");
     return false;
 }
 
 bool BRTSpatializerConnectSoundSource (const char* soundSourceID, const char* listenerModelID)
 {
-    WriteLog ("Connecting sound source: " + std::string (soundSourceID));
+    BRT_Log (0, "Connecting sound source: " + std::string (soundSourceID));
     
     auto* brtInstance = BRTLibraryWrapper::instance();
     
     if (brtInstance == nullptr)
     {
-        WriteLog ("BRT Error: No spatializer instance found");
+        BRT_Log (2, "No spatializer instance found");
         return false;
     }
     
     if (brtInstance->listener)
     {
-        WriteLog ("Listener exists. Finding listener model: " + std::string (listenerModelID));
+        BRT_Log (0, "Listener exists. Finding listener model: " + std::string (listenerModelID));
      
         auto& brtManager = brtInstance->brtManager;
         
@@ -262,7 +259,7 @@ bool BRTSpatializerConnectSoundSource (const char* soundSourceID, const char* li
 
 bool BRTManagerSetBypassed (bool bypass)
 {
-    WriteLog ("Setting Bypassed " + std::string (bypass ? "1" : "0"));
+    BRT_Log (0, "Setting Bypassed " + std::string (bypass ? "1" : "0"));
     if (auto* brtInstance = BRTLibraryWrapper::instance())
     {
         brtInstance->updateParameters ([=] (auto& p) {
@@ -273,7 +270,7 @@ bool BRTManagerSetBypassed (bool bypass)
 
 bool BRTManagerSetSpatializationEnabled (bool enabled)
 {
-    WriteLog ("Setting Spatialization Enabled " + std::string (enabled ? "1" : "0"));
+    BRT_Log (0, "Setting Spatialization Enabled " + std::string (enabled ? "1" : "0"));
     if (auto* brtInstance = BRTLibraryWrapper::instance())
     {
         brtInstance->updateParameters ([=] (auto& p) {
@@ -284,7 +281,7 @@ bool BRTManagerSetSpatializationEnabled (bool enabled)
 
 bool BRTManagerSetInterpolationEnabled (bool enabled)
 {
-    WriteLog ("Setting Interpolation Enabled " + std::string (enabled ? "1" : "0"));
+    BRT_Log (0, "Setting Interpolation Enabled " + std::string (enabled ? "1" : "0"));
     if (auto* brtInstance = BRTLibraryWrapper::instance())
     {
         brtInstance->updateParameters ([=] (auto& p) {
@@ -295,7 +292,7 @@ bool BRTManagerSetInterpolationEnabled (bool enabled)
 
 bool BRTManagerSetITDSimulationEnabled (bool enabled)
 {
-    WriteLog ("Setting ITD Simulation Enabled " + std::string (enabled ? "1" : "0"));
+    BRT_Log (0, "Setting ITD Simulation Enabled " + std::string (enabled ? "1" : "0"));
     if (auto* brtInstance = BRTLibraryWrapper::instance())
     {
         brtInstance->updateParameters ([=] (auto& p) {
@@ -306,7 +303,7 @@ bool BRTManagerSetITDSimulationEnabled (bool enabled)
 
 bool BRTManagerSetNearFieldEffectEnabled (bool enabled)
 {
-    WriteLog ("Setting Near Field Effect Enabled " + std::string (enabled ? "1" : "0"));
+    BRT_Log (0, "Setting Near Field Effect Enabled " + std::string (enabled ? "1" : "0"));
     if (auto* brtInstance = BRTLibraryWrapper::instance())
     {
         brtInstance->updateParameters ([=] (auto& p) {
@@ -317,7 +314,7 @@ bool BRTManagerSetNearFieldEffectEnabled (bool enabled)
 
 bool BRTManagerSetParallaxCorrectionEnabled (bool enabled)
 {
-    WriteLog ("Setting Parallax Correction Enabled " + std::string (enabled ? "1" : "0"));
+    BRT_Log (0, "Setting Parallax Correction Enabled " + std::string (enabled ? "1" : "0"));
     if (auto* brtInstance = BRTLibraryWrapper::instance())
     {
         brtInstance->updateParameters ([=] (auto& p) {
@@ -328,7 +325,7 @@ bool BRTManagerSetParallaxCorrectionEnabled (bool enabled)
 
 bool BRTManagerSetDistanceAttenuationEnabled (bool enabled)
 {
-    WriteLog ("Setting Distance Attenuation Enabled " + std::string (enabled ? "1" : "0"));
+    BRT_Log (0, "Setting Distance Attenuation Enabled " + std::string (enabled ? "1" : "0"));
     if (auto* brtInstance = BRTLibraryWrapper::instance())
     {
         brtInstance->updateParameters ([=] (auto& p) {
