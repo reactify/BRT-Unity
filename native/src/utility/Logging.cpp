@@ -7,6 +7,7 @@
 
 #include "Logging.h"
 #include <atomic>
+#include "AudioPluginBRTUnity.h"
 
 static std::atomic<BRT_LogCallback> g_Callback = nullptr;
 
@@ -15,13 +16,20 @@ void SetLogCallback (BRT_LogCallback cb)
     g_Callback.store (cb, std::memory_order_release);
 }
 
-void BRT_Log (int level, const char* message)
+void BRT_Log(int level, const char* message)
 {
-    auto cb = g_Callback.load (std::memory_order_acquire);
+    printf("BRT_Log called: %s\n", message);
 
-    if (cb != nullptr)
+    auto cb = g_Callback.load(std::memory_order_acquire);
+
+    if (cb)
     {
-        cb (level, message);
+        printf("Callback is valid\n");
+        cb(level, message);
+    }
+    else
+    {
+        printf("Callback is NULL\n");
     }
 }
 

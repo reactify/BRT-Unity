@@ -24,12 +24,10 @@ set(PLUGIN_BUILD_NUMBER "0")
 # Platform detection
 if(APPLE)
     if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
-        # iOS settings
         set(LIB_TYPE STATIC)
         set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "" FORCE)
         set(CMAKE_OSX_DEPLOYMENT_TARGET "18.0" CACHE STRING "" FORCE)
     else()
-        # macOS settings
         set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum macOS deployment version")
         set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "" FORCE)
 
@@ -78,6 +76,8 @@ endif()
 
 # Sources
 file(GLOB_RECURSE PROJECT_SRC CONFIGURE_DEPENDS src/*.cpp src/*.h)
+list(FILTER PROJECT_SRC EXCLUDE REGEX ".*/host/.*")
+
 source_group(TREE "${CMAKE_SOURCE_DIR}/src" PREFIX "Source" FILES ${PROJECT_SRC})
 
 file(GLOB_RECURSE BRT_LIBRARY
@@ -95,7 +95,7 @@ add_library(AudioPluginBRTUnity ${LIB_TYPE}
 # Includes
 target_include_directories(AudioPluginBRTUnity PRIVATE
     ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/internal
+    ${CMAKE_SOURCE_DIR}/src/utility
     ${CMAKE_SOURCE_DIR}/src/unity
     "${BRT_LIBRARY_DIR}/include"
     "${BRT_LIBRARY_DIR}/include/third_party_libraries"
@@ -197,5 +197,76 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
             $<TARGET_FILE:AudioPluginBRTUnity>
             ${PLUGIN_OUTPUT_DIR}
     )
+
+endif()
+
+# =========================================================
+# DESKTOP HOST (PortAudio)
+# =========================================================
+
+option(BUILD_DESKTOP_HOST "Build PortAudio desktop host" ON)
+
+if(BUILD_DESKTOP_HOST AND NOT ANDROID AND NOT (APPLE AND CMAKE_SYSTEM_NAME STREQUAL "iOS"))
+
+    # Homebrew include/lib (macOS)
+    if(APPLE)
+        include_directories(/opt/homebrew/include)
+        link_directories(/opt/homebrew/lib)
+    endif()
+
+    file(GLOB_RECURSE HOST_SRC CONFIGURE_DEPENDS
+        src/host/*.cpp
+        src/host/*.h
+    )
+
+    add_executable(AudioPluginBRTUnityHost
+        ${PROJECT_SRC}
+        ${HOST_SRC}
+    )
+
+    if(APPLE)
+
+        if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
+            set(HOST_ARCH arm64)
+        else()
+            set(HOST_ARCH x86_64)
+        endif()
+
+        set_target_properties(AudioPluginBRTUnityHost PROPERTIES
+            OSX_ARCHITECTURES "${HOST_ARCH}"
+        )
+
+    endif()
+
+    target_include_directories(AudioPluginBRTUnityHost PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/utility
+        ${CMAKE_SOURCE_DIR}/src/unity
+        "${BRT_LIBRARY_DIR}/include"
+        "${BRT_LIBRARY_DIR}/include/third_party_libraries"
+        "${BRT_LIBRARY_DIR}/include/third_party_libraries/eigen"
+        "${BRT_LIBRARY_DIR}/include/third_party_libraries/boost_circular_buffer"
+    )
+
+    target_compile_definitions(AudioPluginBRTUnityHost PRIVATE
+        HOST_BUILD
+        _3DTI_AXIS_CONVENTION_UNITY
+        _3DTI_ANGLE_CONVENTION_LISTEN
+    )
+
+    target_link_libraries(AudioPluginBRTUnityHost PRIVATE
+        portaudio
+        z
+    )
+
+    if(APPLE)
+        target_link_libraries(AudioPluginBRTUnityHost PRIVATE
+            "-framework CoreAudio"
+            "-framework AudioToolbox"
+            "-framework AudioUnit"
+            "-framework CoreFoundation"
+            "${SOFA_LIBRARY_DIR}/lib/osx/universal/libmysofa.a"
+        )
+    endif()
 
 endif()
