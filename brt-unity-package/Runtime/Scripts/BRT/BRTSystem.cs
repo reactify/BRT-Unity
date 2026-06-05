@@ -1,12 +1,14 @@
-using UnityEngine;
-using System.Collections.Generic;
-
 namespace BRT
 {
+    using System.Collections.Generic;
+    using UnityEngine;
+
     public static class BRTSystem
     {
         private static bool _initialized;
-        private static BRTConfiguration _config;
+        private static bool _listenerCreated;
+
+        private static BRTConfiguration _activeConfig;
 
         private static int _dspBufferSize;
 
@@ -14,7 +16,7 @@ namespace BRT
         // Public API
         // --------------------------------------------------------------------
 
-        public static BRTConfiguration ActiveConfig => _config;
+        public static BRTConfiguration ActiveConfig => _activeConfig;
 
         public static void Initialize(BRTConfiguration config = null)
         {
@@ -36,11 +38,20 @@ namespace BRT
                 AudioSettings.outputSampleRate,
                 _dspBufferSize
             );
+            
+            Logger.LogInfo("BRT intialised with sample rate: " + AudioSettings.outputSampleRate + " and buffer size: " + _dspBufferSize);
 
-            // Always resolve a config and apply it
-            if (config == null)
-                config = Resources.Load<BRTConfiguration>("BRTDefault");
+            BRTResourceCatalog.Rebuild();
 
+            // If editor already selected a config, use it
+            if (_activeConfig != null)
+            {
+                ApplyRuntimeConfig();
+                return;
+            }
+
+            // Otherwise load default
+            config ??= Resources.Load<BRTConfiguration>("BRTDefault");
             SetConfig(config, reset: false);
         }
 
@@ -51,149 +62,185 @@ namespace BRT
 
             Logger.LogInfo("BRT.System.Shutdown()");
 
-            NativePluginWrapper.BRTSpatializerDestroy();
+            // NativePluginWrapper.BRTSpatializerDestroy();
 
-            _initialized = false;
-            _config = null;
+            ClearState();
         }
 
         public static void ResetStatics()
         {
-            _initialized = false;
-            _config = null;
+            ClearState();
+            _activeConfig = null;
         }
 
         // --------------------------------------------------------------------
-        // Config
+        // Config entry point
         // --------------------------------------------------------------------
 
-        public static void SetConfig(BRTConfiguration config, bool reset = true)
+        public static void SetConfig(BRTConfiguration config, bool reset = false)
         {
             if (config == null)
-            {
-                Logger.LogError("SetConfig called with null config");
                 return;
-            }
 
-            Logger.LogInfo($"SetConfig: {config.name}");
+            // Always create a working copy (never edit asset directly)
+            _activeConfig = Object.Instantiate(config);
+            _activeConfig.name = config.name + " (Active)";
 
-            if (_initialized && reset)
+            // If not running yet, stop here
+            if (!_initialized)
+                return;
+
+            if (reset)
             {
-                Logger.LogInfo("Resetting spatializer state");
-
                 NativePluginWrapper.BRTSpatializerResetIfNeeded(
                     AudioSettings.outputSampleRate,
                     _dspBufferSize
                 );
+
+                _listenerCreated = false;
             }
 
-            _config = config;
-
-            if (_initialized)
-                ApplyCurrentConfig();
-        }
-
-        public static void SetConfig(string resourcePath, bool reset = true)
-        {
-            var config = Resources.Load<BRTConfiguration>(resourcePath);
-
-            if (config == null)
-            {
-                Logger.LogError($"Config not found at Resources/{resourcePath}");
-                return;
-            }
-
-            SetConfig(config, reset);
+            ApplyRuntimeConfig();
         }
 
         // --------------------------------------------------------------------
-        // Internal
+        // Runtime application
         // --------------------------------------------------------------------
 
-        private static void ApplyCurrentConfig()
+        public static void ReapplyRuntimeConfig()
         {
-            if (_config == null)
+            if (!_initialized || _activeConfig == null)
+                return;
+
+            ApplyRuntimeConfig();
+        }
+
+        private static void ApplyRuntimeConfig()
+        {
+            if (_activeConfig == null)
             {
-                Logger.LogError("ApplyCurrentConfig called with null config");
+                Logger.LogError("ApplyRuntimeConfig called with null config");
                 return;
             }
 
-            Logger.LogInfo($"Applying config: {_config.name}");
+            Logger.LogInfo($"Applying config: {_activeConfig.name}");
 
-            var listener = _config.listenerModels?[0];
-            var listenerEnv = _config.listenerEnvironmentModels?[0];
+            var listener = _activeConfig.listenerModels?[0];
+            var env = _activeConfig.listenerEnvironmentModels?[0];
 
-            if (listener == null || listenerEnv == null)
+            if (listener == null || env == null)
             {
                 Logger.LogError("Invalid configuration");
                 return;
             }
 
-            // Listener
+            // Only create listener once
+            if (!_listenerCreated)
+            {
+                ApplyListener(listener, env);
+                _listenerCreated = true;
+            }
+
+            // Always safe to update these
+            SetHRTF(listener.HRTFResourceIndex);
+            SetNFC(listener.NFCResourceIndex);
+            SetBRIR(env.BRIRResourceIndex);
+        }
+
+        // --------------------------------------------------------------------
+        // Listener setup
+        // --------------------------------------------------------------------
+
+        private static void ApplyListener(ListenerModel listener, ListenerEnvironmentModel env)
+        {
             NativePluginWrapper.BRTSpatializerCreateListener(listener.ListenerID);
+
             NativePluginWrapper.BRTSpatializerCreateListenerModel(0, listener.ModelID);
             NativePluginWrapper.BRTSpatializerConnectListenerModel(
                 listener.ListenerID,
                 listener.ModelID);
 
-            // Environment
-            NativePluginWrapper.BRTSpatializerCreateListenerModel(1, listenerEnv.ModelID);
+            NativePluginWrapper.BRTSpatializerCreateListenerModel(1, env.ModelID);
             NativePluginWrapper.BRTSpatializerConnectListenerModel(
                 listener.ListenerID,
-                listenerEnv.ModelID);
-
-            // Resources
-            LoadResourceGroup(
-                _config.hrtfResources,
-                BRTConfiguration.HRTFResourceFolder,
-                r => r.sofaFile,
-                NativePluginWrapper.BRTSpatializerLoadHRTF,
-                "HRTF"
-            );
-
-            LoadResourceGroup(
-                _config.nfcFilterResources,
-                BRTConfiguration.NFCFilterResourceFolder,
-                r => r.sofaFile,
-                NativePluginWrapper.BRTSpatializerLoadNearFieldCompensationFilter,
-                "NFC"
-            );
-
-            LoadResourceGroup(
-                _config.brirResources,
-                BRTConfiguration.BRIRResourceFolder,
-                r => r.sofaFile,
-                NativePluginWrapper.BRTSpatializerLoadBRIR,
-                "BRIR"
-            );
+                env.ModelID);
         }
 
-        private static void LoadResourceGroup<T>(
-            IList<T> resources,
-            string baseFolder,
-            System.Func<T, string> fileSelector,
-            System.Func<string, bool> loader,
-            string label)
+        // --------------------------------------------------------------------
+        // Resource setters
+        // --------------------------------------------------------------------
+
+        public static void SetHRTF(int index)
         {
-            if (resources == null)
-                return;
+            var model = _activeConfig?.listenerModels?[0];
+            if (model == null) return;
 
-            foreach (var res in resources)
+            model.HRTFResourceIndex = index;
+
+            string file = BRTResourceCatalog.GetHRTF(index);
+            if (file == null) return;
+
+            string path = BRTResourceCatalog.HRTFResourceFolder + file;
+
+            if (!ResourceExtractor.ExtractToPersistentDataPath(path, path, out string fullPath))
             {
-                string sofaFile = fileSelector(res);
-                string path = baseFolder + sofaFile;
-
-                if (!ResourceExtractor.ExtractToPersistentDataPath(path, path, out string fullPath))
-                {
-                    Logger.LogError($"[{label}] Failed to extract: {sofaFile}");
-                    continue;
-                }
-
-                if (!loader(fullPath))
-                {
-                    Logger.LogError($"[{label}] Failed to load: {sofaFile}");
-                }
+                Logger.LogError($"[HRTF] Failed to extract: {file}");
+                return;
             }
+
+            NativePluginWrapper.BRTSpatializerLoadHRTF(fullPath);
+        }
+
+        public static void SetNFC(int index)
+        {
+            var model = _activeConfig?.listenerModels?[0];
+            if (model == null) return;
+
+            model.NFCResourceIndex = index;
+            
+            string file = BRTResourceCatalog.GetNFC(index);
+            if (file == null) return;
+            
+            string path = BRTResourceCatalog.NFCFilterResourceFolder + file;
+
+            if (!ResourceExtractor.ExtractToPersistentDataPath(path, path, out string fullPath))
+            {
+                Logger.LogError($"[HRTF] Failed to extract: {file}");
+                return;
+            }
+
+            NativePluginWrapper.BRTSpatializerLoadNearFieldCompensationFilter(fullPath);
+        }
+
+        public static void SetBRIR(int index)
+        {
+            var env = _activeConfig?.listenerEnvironmentModels?[0];
+            if (env == null) return;
+
+            env.BRIRResourceIndex = index;
+
+            string file = BRTResourceCatalog.GetBRIR(index);
+            if (file == null) return;
+
+            string path = BRTResourceCatalog.BRIRResourceFolder + file;
+
+            if (!ResourceExtractor.ExtractToPersistentDataPath(path, path, out string fullPath))
+            {
+                Logger.LogError($"[BRIR] Failed to extract: {file}");
+                return;
+            }
+
+            NativePluginWrapper.BRTSpatializerLoadBRIR(fullPath);
+        }
+
+        // --------------------------------------------------------------------
+        // State
+        // --------------------------------------------------------------------
+
+        private static void ClearState()
+        {
+            _initialized = false;
+            _listenerCreated = false;
         }
 
         private static bool IsSpatializerActive()

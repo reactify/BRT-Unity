@@ -39,15 +39,15 @@ namespace BRT
 
         public void SetDirectivityIndex(int index)
         {
-            if (instanceId < 0 || configuration == null)
-                return;
-
-            if (configuration.directivityResources == null || index < 0 || index >= configuration.directivityResources.Count)
-                return;
-
-            directivityIndex = index;
-
-            var directivity = configuration.directivityResources[directivityIndex];
+            // if (instanceId < 0 || configuration == null)
+            //     return;
+            //
+            // if (configuration.directivityResources == null || index < 0 || index >= configuration.directivityResources.Count)
+            //     return;
+            //
+            // directivityIndex = index;
+            //
+            // var directivity = configuration.directivityResources[directivityIndex];
             Logger.LogWarning("TODO: Load directivity");
             // if (!string.IsNullOrEmpty(directivity.sofaFile))
         }

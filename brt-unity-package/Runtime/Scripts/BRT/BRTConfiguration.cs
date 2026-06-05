@@ -9,18 +9,8 @@ namespace BRT
     [CreateAssetMenu(menuName = "BRT/Configuration", fileName = "BRTConfiguration")]
     public class BRTConfiguration : ScriptableObject
     {
-        public List<HRTFResource> hrtfResources = new();
-        public List<BRIRResource> brirResources = new();
-        public List<DirectivityResource> directivityResources = new();
-        public List<NFCFilterResource> nfcFilterResources = new();
-
-        public const string HRTFResourceFolder = "Data/HRTF/";
-        public const string BRIRResourceFolder = "Data/BRIR/";
-        public const string DirectivityResourceFolder = "Data/DirectivityTF/";
-        public const string NFCFilterResourceFolder = "Data/SOSFilters/";
-
-        [SerializeField] public List<ListenerModel> listenerModels = new List<ListenerModel>();
-        [SerializeField] public List<ListenerEnvironmentModel> listenerEnvironmentModels = new List<ListenerEnvironmentModel>();
+        [SerializeField] public List<ListenerModel> listenerModels = new();
+        [SerializeField] public List<ListenerEnvironmentModel> listenerEnvironmentModels = new();
 
         private void OnEnable()
         {
@@ -28,7 +18,7 @@ namespace BRT
             {
                 listenerModels.Add(new ListenerModel());
 #if UNITY_EDITOR
-                EditorUtility.SetDirty(this); // mark dirty so the change gets saved
+                EditorUtility.SetDirty(this);
 #endif
             }
 
@@ -36,7 +26,7 @@ namespace BRT
             {
                 listenerEnvironmentModels.Add(new ListenerEnvironmentModel());
 #if UNITY_EDITOR
-                EditorUtility.SetDirty(this); // mark dirty so the change gets saved
+                EditorUtility.SetDirty(this);
 #endif
             }
         }

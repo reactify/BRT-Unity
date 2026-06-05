@@ -19,8 +19,8 @@ namespace BRT.Editor
 
             DrawDefaultInspectorWithout("directivityIndex");
 
-            string[] directivityOptions = GetSofaNames(config.directivityResources);
-            spatializer.directivityIndex = EditorGUILayout.Popup("Directivity", spatializer.directivityIndex, directivityOptions);
+            // string[] directivityOptions = GetSofaNames(config.directivityResources);
+            // spatializer.directivityIndex = EditorGUILayout.Popup("Directivity", spatializer.directivityIndex, directivityOptions);
 
             if (GUI.changed)
             {
