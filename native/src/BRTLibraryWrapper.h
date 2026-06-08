@@ -4,6 +4,7 @@
 #define NOMINMAX
 #include <cfloat>
 #include "BRTLibrary.h"
+#include "Parameters.h"
 #include "VersionedParameters.h"
 
 namespace BRTUnity
@@ -34,22 +35,11 @@ private:
     BRTLibraryWrapper& wrapper;
 };
 
+
 //==============================================================================
 class BRTLibraryWrapper
 {
 public:
-    //==========================================================================
-    struct Parameters
-    {
-        bool bypassed = false;
-        bool spatializationEnabled = true;
-        bool interpolationEnabled = true;
-        bool itdSimulationEnabled = true;
-        bool nearFieldEffectEnabled = true;
-        bool parallaxCorrectionEnabled = true;
-        bool distanceAttenuationEnabled = true;
-    };
-    
     // Audio-thread safe accessor
     static BRTLibraryWrapper* instance() noexcept;
 
@@ -66,13 +56,21 @@ public:
 
     void process (float* in, float* out, unsigned int len, int inCh, int outCh) noexcept;
     
+    //==========================================================================
     template <typename ListenerModelType>
     bool createListenerModel (const char* listenerModelId);
     
+    //==========================================================================
     int addSoundSource();
     bool createSoundSource (const char* soundSourceId);
     bool removeSoundSource (const char* soundSourceId);
+    
+    //==========================================================================
+    bool setHRTF (const char* hrtfFile);
+    bool setNFCFilter (const char* nfcFilterFile);
+    bool setBRIR (const char* brirFile);
 
+    //==========================================================================
     // Update params safely from any other thread:
     template <typename Func>
     void updateParameters (Func&& f) { params.update (std::forward<Func> (f)); }
@@ -91,6 +89,8 @@ private:
     // Access params read-only from audio thread:
     const Parameters& getParameters() const noexcept    {  return params.get(); }
     void updateParameters (const Parameters& params);
+    
+    std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> getListenerModels();
 
     // Shared instance
     static std::atomic<BRTLibraryWrapper*> brtInstance;
@@ -106,7 +106,6 @@ private:
     
     Common::CGlobalParameters globalParameters;
     
-    std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> listenerModels;
     int sampleRate, bufferSize;
     CMonoBuffer<float> outLeftBuffer;
     CMonoBuffer<float> outRightBuffer;
@@ -127,10 +126,7 @@ inline bool BRTLibraryWrapper::createListenerModel (const char* listenerModelId)
     const ScopedManagerSetup managerSetup (brtManager);
     
     if (auto listenerModel = brtManager.CreateListenerModel<ListenerModelType> (listenerModelId))
-    {
-        listenerModels.emplace_back (std::move (listenerModel));
         return true;
-    }
 }
 
 } // namespace BRTUnity

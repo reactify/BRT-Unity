@@ -112,3 +112,78 @@ void WriteLog (std::string logText, const T& value, std::string sourceID = "")
     std::cerr << std::endl;
   #endif
 }
+
+inline Common::CTransform ComputeListenerTransformFromMatrix(float* listenerMatrix, float scale)
+{
+    // SET LISTENER POSITION
+
+    // Inverted 4x4 listener matrix, as provided by Unity
+    float L[16];
+    for (int i = 0; i < 16; i++)
+        L[i] = listenerMatrix[i];
+
+    float listenerpos_x = -(L[0] * L[12] + L[1] * L[13] + L[2] * L[14]) * scale;    // From Unity documentation, if listener is rotated
+    float listenerpos_y = -(L[4] * L[12] + L[5] * L[13] + L[6] * L[14]) * scale;    // From Unity documentation, if listener is rotated
+    float listenerpos_z = -(L[8] * L[12] + L[9] * L[13] + L[10] * L[14]) * scale;    // From Unity documentation, if listener is rotated
+    //float listenerpos_x = -L[12] * scale;    // If listener is not rotated
+    //float listenerpos_y = -L[13] * scale;    // If listener is not rotated
+    //float listenerpos_z = -L[14] * scale;    // If listener is not rotated
+    Common::CTransform listenerTransform;
+    listenerTransform.SetPosition(Common::CVector3(listenerpos_x, listenerpos_y, listenerpos_z));
+
+    // SET LISTENER ORIENTATION
+
+    //float w = 2 * sqrt(1.0f + L[0] + L[5] + L[10]);
+    //float qw = w / 4.0f;
+    //float qx = (L[6] - L[9]) / w;
+    //float qy = (L[8] - L[2]) / w;
+    //float qz = (L[1] - L[4]) / w;
+    // http://forum.unity3d.com/threads/how-to-assign-matrix4x4-to-transform.121966/
+    float tr = L[0] + L[5] + L[10];
+    float w, qw, qx, qy, qz;
+    if (tr > 0.0f)            // General case
+    {
+        w = sqrt(1.0f + tr) * 2.0f;
+        qw = 0.25f * w;
+        qx = (L[6] - L[9]) / w;
+        qy = (L[8] - L[2]) / w;
+        qz = (L[1] - L[4]) / w;
+    }
+    // Cases with w = 0
+    else if ((L[0] > L[5]) && (L[0] > L[10]))
+    {
+        w = sqrt(1.0f + L[0] - L[5] - L[10]) * 2.0f;
+        qw = (L[6] - L[9]) / w;
+        qx = 0.25f * w;
+        qy = -(L[1] + L[4]) / w;
+        qz = -(L[8] + L[2]) / w;
+    }
+    else if (L[5] > L[10])
+    {
+        w = sqrt(1.0f + L[5] - L[0] - L[10]) * 2.0f;
+        qw = (L[8] - L[2]) / w;
+        qx = -(L[1] + L[4]) / w;
+        qy = 0.25f * w;
+        qz = -(L[6] + L[9]) / w;
+    }
+    else
+    {
+        w = sqrt(1.0f + L[10] - L[0] - L[5]) * 2.0f;
+        qw = (L[1] - L[4]) / w;
+        qx = -(L[8] + L[2]) / w;
+        qy = -(L[6] + L[9]) / w;
+        qz = 0.25f * w;
+    }
+
+    Common::CQuaternion unityQuaternion = Common::CQuaternion(qw, qx, qy, qz);
+    listenerTransform.SetOrientation(unityQuaternion.Inverse());
+    return listenerTransform;
+}
+
+inline Common::CTransform ComputeSourceTransformFromMatrix(float* sourceMatrix, float scale)
+{
+    // Orientation does not matters for audio sources
+    Common::CTransform sourceTransform;
+    sourceTransform.SetPosition(Common::CVector3(sourceMatrix[12] * scale, sourceMatrix[13] * scale, sourceMatrix[14] * scale));
+    return sourceTransform;
+}

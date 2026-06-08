@@ -97,6 +97,7 @@ target_include_directories(AudioPluginBRTUnity PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/utility
     ${CMAKE_SOURCE_DIR}/src/unity
+    ${CMAKE_SOURCE_DIR}/src/wrapper
     "${BRT_LIBRARY_DIR}/include"
     "${BRT_LIBRARY_DIR}/include/third_party_libraries"
     "${BRT_LIBRARY_DIR}/include/third_party_libraries/eigen"
@@ -242,6 +243,7 @@ if(BUILD_DESKTOP_HOST AND NOT ANDROID AND NOT (APPLE AND CMAKE_SYSTEM_NAME STREQ
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/utility
         ${CMAKE_SOURCE_DIR}/src/unity
+        ${CMAKE_SOURCE_DIR}/src/wrapper
         "${BRT_LIBRARY_DIR}/include"
         "${BRT_LIBRARY_DIR}/include/third_party_libraries"
         "${BRT_LIBRARY_DIR}/include/third_party_libraries/eigen"

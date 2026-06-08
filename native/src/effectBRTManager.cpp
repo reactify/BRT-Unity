@@ -5,6 +5,7 @@
 #include "BRTLibraryWrapper.h"
 #include "AudioPluginUtil.h"
 #include "AppUtils.h"
+#include "Logging.h"
 
 //==============================================================================
 namespace BRTManager
@@ -22,11 +23,6 @@ namespace BRTManager
 		std::array<float, NumParameters> parameters;
 	};
 
-    inline void WriteLog (std::string logText)
-    {
-        std::cerr << logText << std::endl;
-    }
-
     //==========================================================================
 	UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK CreateCallback (UnityAudioEffectState* state)
     {
@@ -36,7 +32,7 @@ namespace BRTManager
         };
         state->effectdata = effectdata;
         
-        WriteLog("BRT: CREATE MANAGER");
+        BRT_Log (0, "CREATE BRT MANAGER");
         
         BRTLibraryWrapper::initOrReplace (state->samplerate, state->dspbuffersize);
 
@@ -45,7 +41,7 @@ namespace BRTManager
 
     UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK ReleaseCallback (UnityAudioEffectState* state)
     {
-        WriteLog ("DELETE MANAGER");
+        BRT_Log (0, "DELETE BRT MANAGER");
         
         BRTLibraryWrapper::destroy();
         
@@ -103,7 +99,7 @@ namespace BRTManager
 	{
 		if (inchannels != 2 || outchannels != 2)
 		{
-            WriteLog ("ERROR: Incorrect channel count in BRTManager plugin");
+            BRT_Log (2, "Incorrect channel count in BRTManager plugin");
 			return UNITY_AUDIODSP_ERR_UNSUPPORTED;
 		}
         

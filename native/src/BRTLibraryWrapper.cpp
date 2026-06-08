@@ -50,6 +50,8 @@ void BRTLibraryWrapper::initOrReplace (int sampleRate, int bufferSize)
     if (current && current->isCompatible (sampleRate, bufferSize))
         return;
 
+    BRT_Log (0, "[BRTLibraryWrapper] Creating new instance");
+    
     auto* newInstance = new BRTLibraryWrapper (sampleRate, bufferSize);
 
     auto* old = brtInstance.exchange (newInstance, std::memory_order_acq_rel);
@@ -66,6 +68,8 @@ void BRTLibraryWrapper::initOrReplace (int sampleRate, int bufferSize)
 //==============================================================================
 void BRTLibraryWrapper::destroy()
 {
+    BRT_Log (0, "[BRTLibraryWrapper] Destroying old instance");
+    
     auto* old = brtInstance.exchange (nullptr, std::memory_order_acq_rel);
 
     if (old)
@@ -103,9 +107,7 @@ bool BRTLibraryWrapper::isCompatible (int newSampleRate, int newBufferSize) cons
 }
 
 //==============================================================================
-// Suspend
-
-void BRTLibraryWrapper::suspendProcessing(bool shouldBeSuspended) noexcept
+void BRTLibraryWrapper::suspendProcessing (bool shouldBeSuspended) noexcept
 {
     suspended.store(shouldBeSuspended, std::memory_order_release);
 }
@@ -116,8 +118,6 @@ bool BRTLibraryWrapper::isSuspended() const noexcept
 }
 
 //==============================================================================
-// Process (audio thread)
-
 void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
                                  unsigned int length, int inCh, int outCh) noexcept
 {
@@ -179,10 +179,67 @@ bool BRTLibraryWrapper::removeSoundSource (const char* soundSourceId)
     
     releaseSoundSourceId (std::stoi (soundSourceId));
     
-    for (const auto& listenerModel : listenerModels)
+    for (const auto& listenerModel : getListenerModels())
         listenerModel->DisconnectSoundSource (soundSourceId);
     
     return brtManager.RemoveSoundSource (soundSourceId);
+}
+
+bool BRTLibraryWrapper::setHRTF (const char* hrtfFile)
+{
+    if (! listener)
+    {
+        BRT_Log (2, "Error setting HRTF. No listener found");
+        return false;
+    }
+    
+    auto hrtf = std::make_shared<BRTServices::CHRTF>();
+    
+    if (! AppUtils::LoadHRTFSofaFile (hrtfFile, hrtf))
+    {
+        BRT_Log (2, "Error loading SOFA HRTF");
+        return false;
+    }
+    
+    return listener->SetHRTF (hrtf);
+}
+
+bool BRTLibraryWrapper::setNFCFilter (const char* nfcFilterFile)
+{
+    if (! listener)
+    {
+        BRT_Log (2, "Error setting NFC. No listener found");
+        return false;
+    }
+    
+    auto sosFilter = std::make_shared<BRTServices::CSOSFilters>();
+    
+    if (! AppUtils::LoadNearFieldSOSFilter (nfcFilterFile, sosFilter))
+    {
+        BRT_Log (2, "Error loading SOFA NFC file");
+        return false;
+    }
+    
+    return listener->SetNearFieldCompensationFilters (sosFilter);
+}
+
+bool BRTLibraryWrapper::setBRIR (const char* brirFile)
+{
+    if (! listener)
+    {
+        BRT_Log (2, "Error setting BRIR. No listener found");
+        return false;
+    }
+    
+    auto brir = std::make_shared<BRTServices::CHRBRIR>();
+    
+    if (! AppUtils::LoadBRIRSofaFile (brirFile, brir, 0, 0, 0, 0))
+    {
+        BRT_Log (2, "Error loading SOFA BRIR file");
+        return false;
+    }
+    
+    return listener->SetHRBRIR (brir);
 }
 
 int BRTLibraryWrapper::getNextSoundSourceId()
@@ -247,6 +304,18 @@ void BRTLibraryWrapper::updateParameters (const Parameters& params)
     setEnabled (listener.get(), params.distanceAttenuationEnabled,
                 &CListener::EnableDistanceAttenuation,
                 &CListener::DisableDistanceAttenuation);
+}
+
+std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> BRTLibraryWrapper::getListenerModels()
+{
+    using ListenerModelBase = BRTListenerModel::CListenerModelBase;
+    
+    std::vector<std::shared_ptr<ListenerModelBase>> models;
+    
+    for (auto modelID : brtManager.GetListenerModelIDs())
+        models.emplace_back (brtManager.GetListenerModel<ListenerModelBase> (modelID));
+    
+    return models;
 }
 
 } // namespace BRTUnity

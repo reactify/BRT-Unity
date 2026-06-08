@@ -134,27 +134,10 @@ bool BRTSpatializerLoadHRTF (const char* hrtfFile) // TODO: return index?
 {
     BRT_Log (0, "Loading HRTF " +  std::string (hrtfFile));
     
-    auto* brtInstance = BRTLibraryWrapper::instance();
+    if (auto* brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->setHRTF (hrtfFile);
     
-    if (brtInstance == nullptr)
-    {
-        BRT_Log (2, "BRT Error: No spatializer instance found");
-        return false;
-    }
-    
-    auto hrtf = std::make_shared<BRTServices::CHRTF>();
-    
-    if (! AppUtils::LoadHRTFSofaFile (hrtfFile, hrtf))
-    {
-        BRT_Log (2, "BRT: Error loading SOFA HRTF");
-        return false;
-    }
-    
-    if (auto listener = brtInstance->listener)
-        return listener->SetHRTF (hrtf);
-
-    BRT_Log (2, "Error setting HRTF");
-    
+    BRT_Log (2, "BRT Error: No spatializer instance found");
     return false;
 }
 
@@ -162,55 +145,21 @@ bool BRTSpatializerLoadNearFieldCompensationFilter (const char* nfcFilterFile)
 {
     BRT_Log (0, "Loading NFC Filter " +  std::string (nfcFilterFile));
     
-    auto* brtInstance = BRTLibraryWrapper::instance();
+    if (auto* brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->setNFCFilter (nfcFilterFile);
     
-    if (brtInstance == nullptr)
-    {
-        BRT_Log (2, "BRT Error: No spatializer instance found");
-        return false;
-    }
-    
-    auto sosFilter = std::make_shared<BRTServices::CSOSFilters>();
-    
-    if (! AppUtils::LoadNearFieldSOSFilter (nfcFilterFile, sosFilter))
-    {
-        BRT_Log (2, "BRT: Error loading SOFA NFC file");
-        return false;
-    }
-    
-    if (auto listener = brtInstance->listener)
-        return listener->SetNearFieldCompensationFilters (sosFilter);
-
-    BRT_Log (2, "Error setting NFC Filter");
-    
-    return true;
+    BRT_Log (2, "BRT Error: No spatializer instance found");
+    return false;
 }
 
 bool BRTSpatializerLoadBRIR (const char* brirFile)
 {
     BRT_Log (0, "Loading BRIR " +  std::string (brirFile));
     
-    auto* brtInstance = BRTLibraryWrapper::instance();
-    
-    if (brtInstance == nullptr)
-    {
-        BRT_Log (2, "BRT Error: No spatializer instance found");
-        return false;
-    }
-    
-    auto brir = std::make_shared<BRTServices::CHRBRIR>();
-    
-    if (! AppUtils::LoadBRIRSofaFile (brirFile, brir, 0,0,0,0))
-    {
-        BRT_Log (2, "BRT: Error loading SOFA BRIR");
-        return false;
-    }
-    
-    if (auto listener = brtInstance->listener)
-        return listener->SetHRBRIR (brir);
+    if (auto* brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->setBRIR (brirFile);
 
-    BRT_Log (2, "BRT: Error setting BRIR");
-    
+    BRT_Log (2, "Error setting BRIR");
     return false;
 }
 
