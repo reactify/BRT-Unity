@@ -1,4 +1,5 @@
 using UnityEngine;
+using BRT.Log.Internal;
 
 namespace BRT
 {
@@ -8,7 +9,13 @@ namespace BRT
         {
             Logger.FlushNative();
         }
-
+        
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Reset()
+        {
+            LoggerInterop.SetLogCallback(null);
+        }
+        
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Init()
         {
