@@ -81,10 +81,9 @@ namespace BRT
         {
             if (config == null)
                 return;
-
-            // Always create a working copy (never edit asset directly)
+            
             _activeConfig = Object.Instantiate(config);
-            _activeConfig.name = config.name + " (Active)";
+            _activeConfig.name = config.name;
 
             // If not running yet, stop here
             if (!_initialized)

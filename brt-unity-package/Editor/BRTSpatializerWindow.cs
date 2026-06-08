@@ -8,35 +8,48 @@ namespace BRT.Editor
         private BRTConfiguration[] _presets;
         private int _selectedIndex = -1;
 
-        // ------------------------------------------------------------
-        // Open Window
-        // ------------------------------------------------------------
+        private BRTConfiguration _sourcePreset;
+
+        private UnityEditor.Editor _runtimeEditor;
+
+        // --------------------------------------------------------------------
+        // Window
+        // --------------------------------------------------------------------
 
         [MenuItem("BRT/Spatializer")]
-        public static void ShowWindow()
+        public static void Open()
         {
             GetWindow<BRTSpatializerWindow>("BRT Spatializer");
         }
 
-        // ------------------------------------------------------------
+        // --------------------------------------------------------------------
         // Lifecycle
-        // ------------------------------------------------------------
+        // --------------------------------------------------------------------
 
         private void OnEnable()
         {
             LoadPresets();
-            SyncSelection();
+            SyncToActiveConfig();
+        }
+
+        private void OnDisable()
+        {
+            if (_runtimeEditor != null)
+            {
+                DestroyImmediate(_runtimeEditor);
+                _runtimeEditor = null;
+            }
         }
 
         private void OnFocus()
         {
-            SyncSelection();
+            SyncToActiveConfig();
             Repaint();
         }
 
-        // ------------------------------------------------------------
-        // UI
-        // ------------------------------------------------------------
+        // --------------------------------------------------------------------
+        // GUI
+        // --------------------------------------------------------------------
 
         private void OnGUI()
         {
@@ -45,7 +58,9 @@ namespace BRT.Editor
 
             if (_presets == null || _presets.Length == 0)
             {
-                EditorGUILayout.HelpBox("No BRTConfiguration presets found in any Resources folder.", MessageType.Warning);
+                EditorGUILayout.HelpBox(
+                    "No BRTConfiguration presets found in Resources.",
+                    MessageType.Warning);
 
                 if (GUILayout.Button("Refresh"))
                     LoadPresets();
@@ -53,42 +68,73 @@ namespace BRT.Editor
                 return;
             }
 
-            DrawPresetDropdown();
+            DrawPresetSelector();
 
             EditorGUILayout.Space(10);
 
-            DrawActiveConfigInfo();
+            DrawActiveInfo();
 
             EditorGUILayout.Space(10);
 
-            if (GUILayout.Button("Refresh"))
+            DrawRuntimeInspector();
+
+            EditorGUILayout.Space(10);
+
+            if (GUILayout.Button("Refresh Presets"))
             {
                 LoadPresets();
-                SyncSelection();
+                SyncToActiveConfig();
             }
         }
 
-        private void DrawPresetDropdown()
-        {
-            string[] names = System.Array.ConvertAll(_presets, p => p.name);
+        // --------------------------------------------------------------------
+        // Preset selection
+        // --------------------------------------------------------------------
 
-            EditorGUI.BeginChangeCheck();
+        private void DrawPresetSelector()
+        {
+            string[] names = new string[_presets.Length];
+
+            for (int i = 0; i < _presets.Length; i++)
+            {
+                var name = _presets[i] ? _presets[i].name : "<Missing>";
+
+                if (_presets[i] == _sourcePreset && IsDirty())
+                    name += " *";
+
+                names[i] = name;
+            }
+
+            EditorGUILayout.BeginHorizontal();
 
             int newIndex = EditorGUILayout.Popup("Preset", _selectedIndex, names);
 
-            if (EditorGUI.EndChangeCheck())
+            bool reloadClicked = GUILayout.Button("Reload", GUILayout.Width(70));
+
+            if (newIndex != _selectedIndex || reloadClicked)
             {
-                if (newIndex >= 0 && newIndex < _presets.Length)
+                _selectedIndex = newIndex;
+
+                if (_selectedIndex >= 0 && _selectedIndex < _presets.Length)
                 {
-                    _selectedIndex = newIndex;
-                    BRTSystem.SetConfig(_presets[_selectedIndex]);
+                    _sourcePreset = _presets[_selectedIndex];
+
+                    BRTSystem.SetConfig(_sourcePreset);
+
+                    SyncToActiveConfig();
                 }
             }
+
+            EditorGUILayout.EndHorizontal();
         }
 
-        private void DrawActiveConfigInfo()
+        // --------------------------------------------------------------------
+        // Active info
+        // --------------------------------------------------------------------
+
+        private void DrawActiveInfo()
         {
-            EditorGUILayout.LabelField("Active Config", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Active Runtime Config", EditorStyles.boldLabel);
 
             var active = BRTSystem.ActiveConfig;
 
@@ -98,41 +144,153 @@ namespace BRT.Editor
                 return;
             }
 
-            EditorGUILayout.LabelField(active.name);
+            string label = active.name;
+
+            if (_sourcePreset != null && IsDirty())
+                label += " (Modified)";
+
+            EditorGUILayout.LabelField(label);
         }
 
-        // ------------------------------------------------------------
-        // Internal
-        // ------------------------------------------------------------
+        // --------------------------------------------------------------------
+        // Runtime inspector
+        // --------------------------------------------------------------------
 
-        private void LoadPresets()
-        {
-            _presets = Resources.LoadAll<BRTConfiguration>("");
-        }
-
-        private void SyncSelection()
+        private void DrawRuntimeInspector()
         {
             var active = BRTSystem.ActiveConfig;
-
-            if (_presets == null || _presets.Length == 0)
-            {
-                _selectedIndex = -1;
-                return;
-            }
-
-            _selectedIndex = -1;
 
             if (active == null)
                 return;
 
-            for (int i = 0; i < _presets.Length; i++)
+            if (_runtimeEditor == null || _runtimeEditor.target != active)
             {
-                if (_presets[i] == active)
+                if (_runtimeEditor != null)
+                    DestroyImmediate(_runtimeEditor);
+
+                _runtimeEditor = UnityEditor.Editor.CreateEditor(active);
+            }
+
+            EditorGUILayout.LabelField("Runtime Configuration", EditorStyles.boldLabel);
+
+            EditorGUI.BeginChangeCheck();
+
+            _runtimeEditor.OnInspectorGUI();
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                _runtimeEditor.serializedObject.ApplyModifiedProperties();
+                
+                BRTSystem.ReapplyRuntimeConfig();
+
+                Repaint();
+            }
+        }
+
+        // --------------------------------------------------------------------
+        // Sync
+        // --------------------------------------------------------------------
+
+        private void SyncToActiveConfig()
+        {
+            var active = BRTSystem.ActiveConfig;
+
+            _selectedIndex = -1;
+
+            if (_presets != null && _sourcePreset != null)
+            {
+                for (int i = 0; i < _presets.Length; i++)
                 {
-                    _selectedIndex = i;
-                    return;
+                    if (_presets[i] == _sourcePreset)
+                    {
+                        _selectedIndex = i;
+                        break;
+                    }
                 }
             }
+
+            if (_runtimeEditor != null)
+            {
+                DestroyImmediate(_runtimeEditor);
+                _runtimeEditor = null;
+            }
+
+            if (active != null)
+            {
+                _runtimeEditor = UnityEditor.Editor.CreateEditor(active);
+            }
+        }
+
+        // --------------------------------------------------------------------
+        // Dirty detection (generic, stable)
+        // --------------------------------------------------------------------
+
+        private bool IsDirty()
+        {
+            var active = BRTSystem.ActiveConfig;
+
+            if (_sourcePreset == null || active == null)
+                return false;
+
+            return ComputeHash(_sourcePreset) != ComputeHash(active);
+        }
+
+        private int ComputeHash(Object obj)
+        {
+            var so = new SerializedObject(obj);
+            var prop = so.GetIterator();
+
+            int hash = 17;
+            bool enterChildren = true;
+
+            while (prop.NextVisible(enterChildren))
+            {
+                enterChildren = false;
+
+                if (prop.propertyPath == "m_Script")
+                    continue;
+
+                hash = hash * 31 + prop.propertyPath.GetHashCode();
+
+                switch (prop.propertyType)
+                {
+                    case SerializedPropertyType.Integer:
+                        hash = hash * 31 + prop.intValue;
+                        break;
+
+                    case SerializedPropertyType.Boolean:
+                        hash = hash * 31 + (prop.boolValue ? 1 : 0);
+                        break;
+
+                    case SerializedPropertyType.Float:
+                        hash = hash * 31 + prop.floatValue.GetHashCode();
+                        break;
+
+                    case SerializedPropertyType.String:
+                        if (prop.stringValue != null)
+                            hash = hash * 31 + prop.stringValue.GetHashCode();
+                        break;
+
+                    case SerializedPropertyType.Enum:
+                        hash = hash * 31 + prop.enumValueIndex;
+                        break;
+
+                    case SerializedPropertyType.ObjectReference:
+                        hash = hash * 31 + (prop.objectReferenceValue ? prop.objectReferenceValue.GetInstanceID() : 0);
+                        break;
+                }
+            }
+
+            return hash;
+        }
+
+        // --------------------------------------------------------------------
+        // Loading
+        // --------------------------------------------------------------------
+
+        private void LoadPresets()
+        {
+            _presets = Resources.LoadAll<BRTConfiguration>("");
         }
     }
 }
