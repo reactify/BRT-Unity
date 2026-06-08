@@ -56,6 +56,7 @@ public:
     // Main-thread init/replacement
     static void initOrReplace (int sampleRate, int bufferSize);
     static void destroy();
+    static void cleanup();
 
     bool isCompatible (int sampleRate, int bufferSize) const noexcept;
     
@@ -93,6 +94,15 @@ private:
 
     // Shared instance
     static std::atomic<BRTLibraryWrapper*> brtInstance;
+    
+    struct RetiredItem
+    {
+        BRTLibraryWrapper* ptr;
+        int framesLeft;
+    };
+
+    static std::mutex retireMutex;
+    static std::vector<RetiredItem> retired;
     
     Common::CGlobalParameters globalParameters;
     
