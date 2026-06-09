@@ -12,24 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ead9c0dd5aed840eaa70928f842b6964, type: 3}
   m_Name: BRTDefault
   m_EditorClassIdentifier: 
-  hrtfResources:
-  - sofaFile: 3DTI_HRTF_IRC1008_512s_48000Hz.sofa
-    spatialResolution: 5
-    headCircumference: 55
-    delayForm: 0
-  brirResources:
-  - sofaFile: BRIR_Trapezoid_48000Hz.sofa
-  directivityResources:
-  - sofaFile: Cardioid_LP_30dB_256s_resampled10.sofa
-    spatialResolution: 5
-  nfcFilterResources:
-  - sofaFile: EarMuffFilter_48Khz.sofa
-  - sofaFile: NearFieldCompensation_ILD_1.2m_48Khz.sofa
   listenerModels:
   - ListenerID: Listener_0
     ModelID: Direct_Path
-    HRTFResourceIndex: 0
-    NFCResourceIndex: 1
+    HRTFResourceIndex: 1
+    NFCResourceIndex: 2
     Enabled: 1
     Spatialize: 1
     Interpolation: 1
@@ -39,5 +26,5 @@ MonoBehaviour:
   listenerEnvironmentModels:
   - ListenerID: Listener_0
     ModelID: Reverb_Path
-    BRIRResourceIndex: 0
+    BRIRResourceIndex: 4
     Enabled: 1
