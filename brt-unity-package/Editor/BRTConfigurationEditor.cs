@@ -47,7 +47,7 @@ namespace BRT.Editor
                 return;
 
             EditorGUILayout.LabelField("Listener Model", EditorStyles.boldLabel);
-            DrawListenerModel(listenerModels.GetArrayElementAtIndex(0));
+            DrawListenerModel(listenerModels.GetArrayElementAtIndex(0), isEnvironment: false);
 
             EditorGUILayout.Space(10);
 
@@ -55,10 +55,10 @@ namespace BRT.Editor
                 return;
 
             EditorGUILayout.LabelField("Listener Environment Model", EditorStyles.boldLabel);
-            DrawListenerModel(listenerEnvironmentModels.GetArrayElementAtIndex(0));
+            DrawListenerModel(listenerEnvironmentModels.GetArrayElementAtIndex(0), isEnvironment: true);
         }
 
-        private void DrawListenerModel(SerializedProperty modelProp)
+        private void DrawListenerModel(SerializedProperty modelProp, bool isEnvironment)
         {
             EditorGUI.indentLevel++;
 
@@ -69,23 +69,47 @@ namespace BRT.Editor
 
             while (!SerializedProperty.EqualContents(prop, end))
             {
-                switch (prop.name)
+                if (prop.name == "Enabled")
                 {
-                    case "HRTFResourceIndex":
-                        DrawPopup("HRTF", prop, BRTResourceCatalog.HRTF);
-                        break;
+                    EditorGUI.BeginChangeCheck();
 
-                    case "NFCResourceIndex":
-                        DrawPopup("NFC Filter", prop, BRTResourceCatalog.NFC);
-                        break;
+                    EditorGUILayout.PropertyField(prop, true);
 
-                    case "BRIRResourceIndex":
-                        DrawPopup("BRIR", prop, BRTResourceCatalog.BRIR);
-                        break;
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        serializedObject.ApplyModifiedProperties();
 
-                    default:
-                        EditorGUILayout.PropertyField(prop, true);
-                        break;
+                        var modelIdProp = modelProp.FindPropertyRelative("ModelID");
+                        var modelId = modelIdProp != null ? modelIdProp.stringValue : null;
+
+                        bool enabled = prop.boolValue;
+
+                        Debug.Log(modelId + ": " + enabled);
+                        NativePluginWrapper.BRTSpatializerSetListenerModelEnabled(modelId, enabled);
+
+                        serializedObject.Update();
+                    }
+                }
+                else
+                {
+                    switch (prop.name)
+                    {
+                        case "HRTFResourceIndex":
+                            DrawPopup("HRTF", prop, BRTResourceCatalog.HRTF);
+                            break;
+
+                        case "NFCResourceIndex":
+                            DrawPopup("NFC Filter", prop, BRTResourceCatalog.NFC);
+                            break;
+
+                        case "BRIRResourceIndex":
+                            DrawPopup("BRIR", prop, BRTResourceCatalog.BRIR);
+                            break;
+
+                        default:
+                            EditorGUILayout.PropertyField(prop, true);
+                            break;
+                    }
                 }
 
                 if (!prop.NextVisible(false))
