@@ -56,7 +56,7 @@ bool BRTSpatializerCreateListener (const char* listenerId)
 
 bool BRTSpatializerCreateListenerModel (int type, const char* listenerModelId)
 {
-    BRT_Log (0, "Creating Listener Model: " +  std::string (listenerModelId));
+    BRT_Log (0, "Creating Listener Model: " +  std::string (listenerModelId) + " of type: " + std::to_string (type));
     
     auto* brtInstance = BRTLibraryWrapper::instance();
     
@@ -71,11 +71,11 @@ bool BRTSpatializerCreateListenerModel (int type, const char* listenerModelId)
     switch (type)
     {
         case 0:
-            return brtInstance->createListenerModel<CListenerHRTFModel> (listenerModelId);
+            return brtInstance->createListenerModel<CListenerDirectHRTFConvolutionModel> (listenerModelId);
         case 1:
-            return brtInstance->createListenerModel<CListenerAmbisonicEnvironmentBRIRModel> (listenerModelId);
+            return brtInstance->createListenerModel<CListenerDirectBRIRConvolutionModel> (listenerModelId);
         default:
-            return brtInstance->createListenerModel<CListenerHRTFModel> (listenerModelId);
+            return brtInstance->createListenerModel<CListenerDirectHRTFConvolutionModel> (listenerModelId);
     }
 }
 

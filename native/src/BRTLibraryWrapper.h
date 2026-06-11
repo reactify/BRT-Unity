@@ -2,6 +2,7 @@
 #pragma once
 
 #define NOMINMAX
+#include <algorithm>
 #include <cfloat>
 #include "BRTLibrary.h"
 #include "Parameters.h"

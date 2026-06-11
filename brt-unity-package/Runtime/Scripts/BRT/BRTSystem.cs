@@ -229,7 +229,10 @@ namespace BRT
                 return;
             }
 
-            NativePluginWrapper.BRTSpatializerLoadBRIR(fullPath);
+            if (!NativePluginWrapper.BRTSpatializerLoadBRIR(fullPath))
+            {
+                Logger.LogError("Failed to load BRIR");
+            }
         }
 
         // --------------------------------------------------------------------

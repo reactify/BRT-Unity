@@ -166,7 +166,7 @@ bool BRTLibraryWrapper::createSoundSource (const char* soundSourceId)
     const ScopedSuspendProcessing guard (*this);
     const ScopedManagerSetup managerSetup (brtManager);
     
-    if (auto soundSource = brtManager.CreateSoundSource<BRTSourceModel::CSourceSimpleModel> (soundSourceId))
+    if (auto soundSource = brtManager.CreateSoundSource<BRTSourceModel::CSourceOmnidirectionalModel> (soundSourceId))
         return true;
     
     return false;
@@ -193,7 +193,7 @@ bool BRTLibraryWrapper::setHRTF (const char* hrtfFile)
         return false;
     }
     
-    auto hrtf = std::make_shared<BRTServices::CHRTF>();
+    auto hrtf = std::make_shared<BRTServices::CSphericalInterpolatedFIRTable>();
     
     if (! AppUtils::LoadHRTFSofaFile (hrtfFile, hrtf))
     {
@@ -212,7 +212,7 @@ bool BRTLibraryWrapper::setNFCFilter (const char* nfcFilterFile)
         return false;
     }
     
-    auto sosFilter = std::make_shared<BRTServices::CSOSFilters>();
+    auto sosFilter = std::make_shared<BRTServices::CSphericalSOSTable>();
     
     if (! AppUtils::LoadNearFieldSOSFilter (nfcFilterFile, sosFilter))
     {
@@ -225,20 +225,28 @@ bool BRTLibraryWrapper::setNFCFilter (const char* nfcFilterFile)
 
 bool BRTLibraryWrapper::setBRIR (const char* brirFile)
 {
+    BRT_Log (0, "[BRTLIbraryWrapper] Setting BRIR");
+    
     if (! listener)
     {
         BRT_Log (2, "Error setting BRIR. No listener found");
         return false;
     }
     
-    auto brir = std::make_shared<BRTServices::CHRBRIR>();
+    BRT_Log (0, "[BRTLIbraryWrapper] Creating CSphericalFIRTable");
+    auto brir = std::make_shared<BRTServices::CSphericalFIRTable>();
     
+    BRT_Log (0, "[BRTLIbraryWrapper] Loading SOFA file");
     if (! AppUtils::LoadBRIRSofaFile (brirFile, brir, 0, 0, 0, 0))
     {
         BRT_Log (2, "Error loading SOFA BRIR file");
         return false;
     }
     
+//    for (auto& _listenerModel : listenerModelsConnected) {
+//        if (_listenerModel->GetListenerModelCharacteristics().SupportBRIR()) {    
+    
+    BRT_Log (0, "[BRTLIbraryWrapper] Setting BRIR on listener");
     return listener->SetHRBRIR (brir);
 }
 
