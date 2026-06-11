@@ -167,7 +167,12 @@ bool BRTLibraryWrapper::createSoundSource (const char* soundSourceId)
     const ScopedManagerSetup managerSetup (brtManager);
     
     if (auto soundSource = brtManager.CreateSoundSource<BRTSourceModel::CSourceOmnidirectionalModel> (soundSourceId))
+    {
+        for (auto listenerModel : getListenerModels())
+            listenerModel->ConnectSoundSource (soundSourceId);
+        
         return true;
+    }
     
     return false;
 }
