@@ -1,10 +1,13 @@
 
+#pragma once
+
 namespace BRTUnity
 {
 
-struct Parameters
+#pragma pack(push, 1)
+struct ListenerModelParameters
 {
-    bool bypassed = false;
+    bool enabled = true;
     bool spatializationEnabled = true;
     bool interpolationEnabled = true;
     bool itdSimulationEnabled = true;
@@ -12,5 +15,6 @@ struct Parameters
     bool parallaxCorrectionEnabled = true;
     bool distanceAttenuationEnabled = true;
 };
+#pragma pack(pop)
 
 } // namespace BRTUnity

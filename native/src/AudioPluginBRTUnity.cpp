@@ -18,18 +18,6 @@ void BRTSpatializerDestroy()
     BRTLibraryWrapper::destroy();
 }
 
-// TODO
-bool BRTSpatializerSetFloat (int parameter, float value)
-{
-    return false;
-}
-
-// TODO
-bool BRTSpatializerGetFloat (int parameter, float* value)
-{
-    return false;
-}
-
 bool BRTSpatializerCreateListener (const char* listenerId)
 {
     BRT_Log (0, "Creating Listener: " +  std::string (listenerId));
@@ -113,20 +101,13 @@ bool BRTSpatializerConnectListenerModel (const char* listenerId, const char* lis
     return false;
 }
 
-UNITY_AUDIODSP_EXPORT_API
-bool BRTSpatializerSetListenerModelEnabled (const char* listenerModelId, bool enabled)
+void BRTSetListenerModelParameters (const char* listenerModelId, const BRTUnity::ListenerModelParameters* params)
 {
+    BRT_Log (0, "BRTSetListenerModelParameters");
+    
     if (auto* brtInstance = BRTLibraryWrapper::instance())
     {
-        using namespace BRTListenerModel;
-        
-        if (auto listenerModel = brtInstance->brtManager.GetListenerModel<CListenerModelBase> (listenerModelId))
-        {
-            if (enabled)
-                listenerModel->EnableModel();
-            else
-                listenerModel->DisableModel();
-        }
+        brtInstance->updateListenerModelParameters (listenerModelId, params);
     }
 }
 
@@ -206,79 +187,79 @@ bool BRTSpatializerConnectSoundSource (const char* soundSourceID, const char* li
     return false;
 }
 
-bool BRTManagerSetBypassed (bool bypass)
-{
-    BRT_Log (0, "Setting Bypassed " + std::string (bypass ? "1" : "0"));
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
-    {
-        brtInstance->updateParameters ([=] (auto& p) {
-            p.bypassed = bypass;
-        });
-    }
-}
-
-bool BRTManagerSetSpatializationEnabled (bool enabled)
-{
-    BRT_Log (0, "Setting Spatialization Enabled " + std::string (enabled ? "1" : "0"));
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
-    {
-        brtInstance->updateParameters ([=] (auto& p) {
-            p.spatializationEnabled = enabled;
-        });
-    }
-}
-
-bool BRTManagerSetInterpolationEnabled (bool enabled)
-{
-    BRT_Log (0, "Setting Interpolation Enabled " + std::string (enabled ? "1" : "0"));
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
-    {
-        brtInstance->updateParameters ([=] (auto& p) {
-            p.interpolationEnabled = enabled;
-        });
-    }
-}
-
-bool BRTManagerSetITDSimulationEnabled (bool enabled)
-{
-    BRT_Log (0, "Setting ITD Simulation Enabled " + std::string (enabled ? "1" : "0"));
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
-    {
-        brtInstance->updateParameters ([=] (auto& p) {
-            p.itdSimulationEnabled = enabled;
-        });
-    }
-}
-
-bool BRTManagerSetNearFieldEffectEnabled (bool enabled)
-{
-    BRT_Log (0, "Setting Near Field Effect Enabled " + std::string (enabled ? "1" : "0"));
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
-    {
-        brtInstance->updateParameters ([=] (auto& p) {
-            p.nearFieldEffectEnabled = enabled;
-        });
-    }
-}
-
-bool BRTManagerSetParallaxCorrectionEnabled (bool enabled)
-{
-    BRT_Log (0, "Setting Parallax Correction Enabled " + std::string (enabled ? "1" : "0"));
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
-    {
-        brtInstance->updateParameters ([=] (auto& p) {
-            p.parallaxCorrectionEnabled = enabled;
-        });
-    }
-}
-
-bool BRTManagerSetDistanceAttenuationEnabled (bool enabled)
-{
-    BRT_Log (0, "Setting Distance Attenuation Enabled " + std::string (enabled ? "1" : "0"));
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
-    {
-        brtInstance->updateParameters ([=] (auto& p) {
-            p.distanceAttenuationEnabled = enabled;
-        });
-    }
-}
+//bool BRTManagerSetBypassed (bool bypass)
+//{
+//    BRT_Log (0, "Setting Bypassed " + std::string (bypass ? "1" : "0"));
+//    if (auto* brtInstance = BRTLibraryWrapper::instance())
+//    {
+//        brtInstance->updateParameters ([=] (auto& p) {
+//            p.bypassed = bypass;
+//        });
+//    }
+//}
+//
+//bool BRTManagerSetSpatializationEnabled (bool enabled)
+//{
+//    BRT_Log (0, "Setting Spatialization Enabled " + std::string (enabled ? "1" : "0"));
+//    if (auto* brtInstance = BRTLibraryWrapper::instance())
+//    {
+//        brtInstance->updateParameters ([=] (auto& p) {
+//            p.spatializationEnabled = enabled;
+//        });
+//    }
+//}
+//
+//bool BRTManagerSetInterpolationEnabled (bool enabled)
+//{
+//    BRT_Log (0, "Setting Interpolation Enabled " + std::string (enabled ? "1" : "0"));
+//    if (auto* brtInstance = BRTLibraryWrapper::instance())
+//    {
+//        brtInstance->updateParameters ([=] (auto& p) {
+//            p.interpolationEnabled = enabled;
+//        });
+//    }
+//}
+//
+//bool BRTManagerSetITDSimulationEnabled (bool enabled)
+//{
+//    BRT_Log (0, "Setting ITD Simulation Enabled " + std::string (enabled ? "1" : "0"));
+//    if (auto* brtInstance = BRTLibraryWrapper::instance())
+//    {
+//        brtInstance->updateParameters ([=] (auto& p) {
+//            p.itdSimulationEnabled = enabled;
+//        });
+//    }
+//}
+//
+//bool BRTManagerSetNearFieldEffectEnabled (bool enabled)
+//{
+//    BRT_Log (0, "Setting Near Field Effect Enabled " + std::string (enabled ? "1" : "0"));
+//    if (auto* brtInstance = BRTLibraryWrapper::instance())
+//    {
+//        brtInstance->updateParameters ([=] (auto& p) {
+//            p.nearFieldEffectEnabled = enabled;
+//        });
+//    }
+//}
+//
+//bool BRTManagerSetParallaxCorrectionEnabled (bool enabled)
+//{
+//    BRT_Log (0, "Setting Parallax Correction Enabled " + std::string (enabled ? "1" : "0"));
+//    if (auto* brtInstance = BRTLibraryWrapper::instance())
+//    {
+//        brtInstance->updateParameters ([=] (auto& p) {
+//            p.parallaxCorrectionEnabled = enabled;
+//        });
+//    }
+//}
+//
+//bool BRTManagerSetDistanceAttenuationEnabled (bool enabled)
+//{
+//    BRT_Log (0, "Setting Distance Attenuation Enabled " + std::string (enabled ? "1" : "0"));
+//    if (auto* brtInstance = BRTLibraryWrapper::instance())
+//    {
+//        brtInstance->updateParameters ([=] (auto& p) {
+//            p.distanceAttenuationEnabled = enabled;
+//        });
+//    }
+//}

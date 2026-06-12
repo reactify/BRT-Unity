@@ -9,10 +9,6 @@ namespace BRT.Editor
         private SerializedProperty listenerModels;
         private SerializedProperty listenerEnvironmentModels;
 
-        // --------------------------------------------------------------------
-        // INIT
-        // --------------------------------------------------------------------
-
         private void OnEnable()
         {
             listenerModels = serializedObject.FindProperty("listenerModels");
@@ -20,10 +16,6 @@ namespace BRT.Editor
 
             BRTResourceCatalog.Ensure();
         }
-
-        // --------------------------------------------------------------------
-        // INSPECTOR
-        // --------------------------------------------------------------------
 
         public override void OnInspectorGUI()
         {
@@ -37,28 +29,24 @@ namespace BRT.Editor
             serializedObject.ApplyModifiedProperties();
         }
 
-        // --------------------------------------------------------------------
-        // LISTENER MODELS
-        // --------------------------------------------------------------------
-
         private void DrawListenerModels()
         {
-            if (listenerModels == null || listenerModels.arraySize == 0)
-                return;
-
-            EditorGUILayout.LabelField("Listener Model", EditorStyles.boldLabel);
-            DrawListenerModel(listenerModels.GetArrayElementAtIndex(0), isEnvironment: false);
+            if (listenerModels != null && listenerModels.arraySize > 0)
+            {
+                EditorGUILayout.LabelField("Listener Model", EditorStyles.boldLabel);
+                DrawListenerModel(listenerModels.GetArrayElementAtIndex(0));
+            }
 
             EditorGUILayout.Space(10);
 
-            if (listenerEnvironmentModels == null || listenerEnvironmentModels.arraySize == 0)
-                return;
-
-            EditorGUILayout.LabelField("Listener Environment Model", EditorStyles.boldLabel);
-            DrawListenerModel(listenerEnvironmentModels.GetArrayElementAtIndex(0), isEnvironment: true);
+            if (listenerEnvironmentModels != null && listenerEnvironmentModels.arraySize > 0)
+            {
+                EditorGUILayout.LabelField("Listener Environment Model", EditorStyles.boldLabel);
+                DrawListenerModel(listenerEnvironmentModels.GetArrayElementAtIndex(0));
+            }
         }
 
-        private void DrawListenerModel(SerializedProperty modelProp, bool isEnvironment)
+        private void DrawListenerModel(SerializedProperty modelProp)
         {
             EditorGUI.indentLevel++;
 
@@ -69,47 +57,23 @@ namespace BRT.Editor
 
             while (!SerializedProperty.EqualContents(prop, end))
             {
-                if (prop.name == "Enabled")
+                switch (prop.name)
                 {
-                    EditorGUI.BeginChangeCheck();
+                    case "HRTFResourceIndex":
+                        DrawPopup("HRTF", prop, BRTResourceCatalog.HRTF);
+                        break;
 
-                    EditorGUILayout.PropertyField(prop, true);
+                    case "NFCResourceIndex":
+                        DrawPopup("NFC Filter", prop, BRTResourceCatalog.NFC);
+                        break;
 
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        serializedObject.ApplyModifiedProperties();
+                    case "BRIRResourceIndex":
+                        DrawPopup("BRIR", prop, BRTResourceCatalog.BRIR);
+                        break;
 
-                        var modelIdProp = modelProp.FindPropertyRelative("ModelID");
-                        var modelId = modelIdProp != null ? modelIdProp.stringValue : null;
-
-                        bool enabled = prop.boolValue;
-
-                        Debug.Log(modelId + ": " + enabled);
-                        NativePluginWrapper.BRTSpatializerSetListenerModelEnabled(modelId, enabled);
-
-                        serializedObject.Update();
-                    }
-                }
-                else
-                {
-                    switch (prop.name)
-                    {
-                        case "HRTFResourceIndex":
-                            DrawPopup("HRTF", prop, BRTResourceCatalog.HRTF);
-                            break;
-
-                        case "NFCResourceIndex":
-                            DrawPopup("NFC Filter", prop, BRTResourceCatalog.NFC);
-                            break;
-
-                        case "BRIRResourceIndex":
-                            DrawPopup("BRIR", prop, BRTResourceCatalog.BRIR);
-                            break;
-
-                        default:
-                            EditorGUILayout.PropertyField(prop, true);
-                            break;
-                    }
+                    default:
+                        EditorGUILayout.PropertyField(prop, true);
+                        break;
                 }
 
                 if (!prop.NextVisible(false))
@@ -118,10 +82,6 @@ namespace BRT.Editor
 
             EditorGUI.indentLevel--;
         }
-
-        // --------------------------------------------------------------------
-        // POPUP
-        // --------------------------------------------------------------------
 
         private void DrawPopup(string label, SerializedProperty prop, string[] options)
         {
@@ -132,13 +92,10 @@ namespace BRT.Editor
             }
 
             int index = Mathf.Clamp(prop.intValue, 0, options.Length - 1);
-
             int newIndex = EditorGUILayout.Popup(label, index, options);
 
             if (newIndex != prop.intValue)
-            {
                 prop.intValue = newIndex;
-            }
         }
     }
 }

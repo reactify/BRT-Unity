@@ -1,19 +1,20 @@
 using UnityEngine;
 
-[System.Serializable]
-public class ListenerEnvironmentModel
+namespace BRT
 {
-    public string ListenerID;
-    public string ModelID;
 
-    public int BRIRResourceIndex = -1;
-    public bool Enabled;
-
-    public ListenerEnvironmentModel()
+    [System.Serializable]
+    public class ListenerEnvironmentModel
     {
-        ListenerID = "Listener_0";
-        ModelID = "Reverb_Path";
-        Enabled = true;
-        BRIRResourceIndex = 0;
+        public string listenerID;
+        public string modelID;
+
+        public int BRIRResourceIndex = -1;
+        public ListenerModelParameters parameters;
+
+        public ListenerEnvironmentModel()
+        {
+            parameters = ListenerModelParameters.Default();
+        }
     }
 }

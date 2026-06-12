@@ -13,18 +13,27 @@ MonoBehaviour:
   m_Name: BRTDefault
   m_EditorClassIdentifier: 
   listenerModels:
-  - ListenerID: Listener_0
-    ModelID: Direct_Path
-    HRTFResourceIndex: 1
-    NFCResourceIndex: 2
-    Enabled: 1
-    Spatialize: 1
-    Interpolation: 1
-    ITD: 0
-    ParallaxCorrection: 0
-    NearFieldEffect: 0
+  - listenerID: Listener_0
+    modelID: Direct_Path
+    HRTFResourceIndex: 0
+    NFCResourceIndex: 1
+    parameters:
+      enabled: 1
+      spatializationEnabled: 1
+      interpolationEnabled: 1
+      itdSimulationEnabled: 1
+      nearFieldEffectEnabled: 1
+      parallaxCorrectionEnabled: 1
+      distanceAttenuationEnabled: 1
   listenerEnvironmentModels:
-  - ListenerID: Listener_0
-    ModelID: Reverb_Path
-    BRIRResourceIndex: 4
-    Enabled: 1
+  - listenerID: Listener_0
+    modelID: Reverb_Path
+    BRIRResourceIndex: 3
+    parameters:
+      enabled: 1
+      spatializationEnabled: 1
+      interpolationEnabled: 1
+      itdSimulationEnabled: 1
+      nearFieldEffectEnabled: 1
+      parallaxCorrectionEnabled: 1
+      distanceAttenuationEnabled: 1

@@ -72,9 +72,10 @@ public:
     bool setBRIR (const char* brirFile);
 
     //==========================================================================
-    // Update params safely from any other thread:
-    template <typename Func>
-    void updateParameters (Func&& f) { params.update (std::forward<Func> (f)); }
+    void updateListenerModelParameters (const char* modelId, const ListenerModelParameters* p)
+    {
+        applyListenerModelParameters (modelId, p);
+    }
     
     BRTBase::CBRTManager brtManager;
     std::shared_ptr<BRTBase::CListener> listener;
@@ -87,9 +88,7 @@ private:
     int getNextSoundSourceId();
     void releaseSoundSourceId (int soundSourceId);
     
-    // Access params read-only from audio thread:
-    const Parameters& getParameters() const noexcept    {  return params.get(); }
-    void updateParameters (const Parameters& params);
+    void applyListenerModelParameters (const char* modelId, const ListenerModelParameters* p);
     
     std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> getListenerModels();
 
@@ -113,9 +112,6 @@ private:
     std::bitset<128> soundSourceIds;
     std::atomic<bool> suspended;
     std::mutex mutex;
-    
-    uint32_t lastParamVersion = 0;
-    VersionedParameters<Parameters> params;
 };
 
 
@@ -128,6 +124,8 @@ inline bool BRTLibraryWrapper::createListenerModel (const char* listenerModelId)
     
     if (auto listenerModel = brtManager.CreateListenerModel<ListenerModelType> (listenerModelId))
         return true;
+        
+    return false;
 }
 
 } // namespace BRTUnity

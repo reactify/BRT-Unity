@@ -144,6 +144,9 @@ namespace BRT
             SetHRTF(listener.HRTFResourceIndex);
             SetNFC(listener.NFCResourceIndex);
             SetBRIR(env.BRIRResourceIndex);
+            
+            NativePluginWrapper.BRTSetListenerModelParameters(listener.modelID, ref listener.parameters);
+            NativePluginWrapper.BRTSetListenerModelParameters(env.modelID, ref env.parameters);
         }
 
         // --------------------------------------------------------------------
@@ -152,17 +155,17 @@ namespace BRT
 
         private static void ApplyListener(ListenerModel listener, ListenerEnvironmentModel env)
         {
-            NativePluginWrapper.BRTSpatializerCreateListener(listener.ListenerID);
+            NativePluginWrapper.BRTSpatializerCreateListener(listener.listenerID);
 
-            NativePluginWrapper.BRTSpatializerCreateListenerModel(0, listener.ModelID);
+            NativePluginWrapper.BRTSpatializerCreateListenerModel(0, listener.modelID);
             NativePluginWrapper.BRTSpatializerConnectListenerModel(
-                listener.ListenerID,
-                listener.ModelID);
+                listener.listenerID,
+                listener.modelID);
 
-            NativePluginWrapper.BRTSpatializerCreateListenerModel(1, env.ModelID);
+            NativePluginWrapper.BRTSpatializerCreateListenerModel(1, env.modelID);
             NativePluginWrapper.BRTSpatializerConnectListenerModel(
-                listener.ListenerID,
-                env.ModelID);
+                env.listenerID,
+                env.modelID);
         }
 
         // --------------------------------------------------------------------

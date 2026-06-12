@@ -109,12 +109,12 @@ bool BRTLibraryWrapper::isCompatible (int newSampleRate, int newBufferSize) cons
 //==============================================================================
 void BRTLibraryWrapper::suspendProcessing (bool shouldBeSuspended) noexcept
 {
-    suspended.store(shouldBeSuspended, std::memory_order_release);
+    suspended.store (shouldBeSuspended, std::memory_order_release);
 }
 
 bool BRTLibraryWrapper::isSuspended() const noexcept
 {
-    return suspended.load(std::memory_order_acquire);
+    return suspended.load (std::memory_order_acquire);
 }
 
 //==============================================================================
@@ -125,17 +125,6 @@ void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
     {
         std::fill (outBuffer, outBuffer + length * outCh, 0.0f);
         return;
-    }
-
-    if (params.hasChanged (lastParamVersion))
-    {
-        const Parameters& p = params.get();
-
-        if (p.bypassed)
-            return;
-
-        updateParameters (p);
-        lastParamVersion = params.getVersion();
     }
 
     brtManager.ProcessAll();
@@ -238,18 +227,13 @@ bool BRTLibraryWrapper::setBRIR (const char* brirFile)
         return false;
     }
     
-    BRT_Log (0, "[BRTLIbraryWrapper] Creating CSphericalFIRTable");
     auto brir = std::make_shared<BRTServices::CSphericalFIRTable>();
     
-    BRT_Log (0, "[BRTLIbraryWrapper] Loading SOFA file");
     if (! AppUtils::LoadBRIRSofaFile (brirFile, brir, 0, 0, 0, 0))
     {
         BRT_Log (2, "Error loading SOFA BRIR file");
         return false;
     }
-    
-//    for (auto& _listenerModel : listenerModelsConnected) {
-//        if (_listenerModel->GetListenerModelCharacteristics().SupportBRIR()) {    
     
     BRT_Log (0, "[BRTLIbraryWrapper] Setting BRIR on listener");
     return listener->SetHRBRIR (brir);
@@ -279,10 +263,10 @@ void BRTLibraryWrapper::releaseSoundSourceId (int soundSourceId)
     soundSourceIds.reset (soundSourceId);
 }
 
-void BRTLibraryWrapper::updateParameters (const Parameters& params)
+void BRTLibraryWrapper::applyListenerModelParameters (const char* modelId,
+                                                      const ListenerModelParameters* p)
 {
-    if (! listener)
-        return;
+    BRT_Log (0, "applyListenerModelParameters for model " + std::string (modelId));
     
     auto setEnabled = [] (auto* obj, bool enabled, auto enableMethod, auto disableMethod) noexcept
     {
@@ -292,31 +276,41 @@ void BRTLibraryWrapper::updateParameters (const Parameters& params)
             (obj->*disableMethod)();
     };
     
-    using namespace BRTBase;
-    
-    setEnabled (listener.get(), params.spatializationEnabled,
-                &CListener::EnableSpatialization,
-                &CListener::DisableSpatialization);
-    
-    setEnabled (listener.get(), params.interpolationEnabled,
-                &CListener::EnableInterpolation,
-                &CListener::DisableInterpolation);
-    
-    setEnabled (listener.get(), params.itdSimulationEnabled,
-                &CListener::EnableITDSimulation,
-                &CListener::DisableITDSimulation);
-    
-    setEnabled (listener.get(), params.nearFieldEffectEnabled,
-                &CListener::EnableNearFieldEffect,
-                &CListener::DisableNearFieldEffect);
-    
-    setEnabled (listener.get(), params.parallaxCorrectionEnabled,
-                &CListener::EnableParallaxCorrection,
-                &CListener::DisableParallaxCorrection);
-    
-    setEnabled (listener.get(), params.distanceAttenuationEnabled,
-                &CListener::EnableDistanceAttenuation,
-                &CListener::DisableDistanceAttenuation);
+    for (auto listenerModel : getListenerModels())
+    {
+        if (listenerModel->GetModelID() == modelId)
+        {
+            using namespace BRTListenerModel;
+            
+            setEnabled (listenerModel.get(), p->enabled,
+                        &BRTBase::CModelBase::EnableModel,
+                        &BRTBase::CModelBase::DisableModel);
+            
+            setEnabled (listenerModel.get(), p->spatializationEnabled,
+                        &CListenerModelBase::EnableSpatialization,
+                        &CListenerModelBase::DisableSpatialization);
+
+            setEnabled (listenerModel.get(), p->interpolationEnabled,
+                        &CListenerModelBase::EnableInterpolation,
+                        &CListenerModelBase::DisableInterpolation);
+
+            setEnabled (listenerModel.get(), p->itdSimulationEnabled,
+                        &CListenerModelBase::EnableITDSimulation,
+                        &CListenerModelBase::DisableITDSimulation);
+
+            setEnabled (listenerModel.get(), p->nearFieldEffectEnabled,
+                        &CListenerModelBase::EnableNearFieldEffect,
+                        &CListenerModelBase::DisableNearFieldEffect);
+
+            setEnabled (listenerModel.get(), p->parallaxCorrectionEnabled,
+                        &CListenerModelBase::EnableParallaxCorrection,
+                        &CListenerModelBase::DisableParallaxCorrection);
+
+            setEnabled (listenerModel.get(), p->distanceAttenuationEnabled,
+                        &CListenerModelBase::EnableDistanceAttenuation,
+                        &CListenerModelBase::DisableDistanceAttenuation);
+        }
+    }
 }
 
 std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> BRTLibraryWrapper::getListenerModels()
@@ -332,3 +326,4 @@ std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> BRTLibraryWra
 }
 
 } // namespace BRTUnity
+

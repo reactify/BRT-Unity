@@ -28,7 +28,7 @@ namespace BRT
         public static extern bool BRTSpatializerConnectListenerModel(string listenerId, string listenerModelId);
         
         [DllImport(DLL_NAME)]
-        public static extern bool BRTSpatializerSetListenerModelEnabled (string listenerModelId, bool enabled);
+        public static extern void BRTSetListenerModelParameters(string listenerModelId, ref ListenerModelParameters parameters);
 
         [DllImport(DLL_NAME)]
         public static extern bool BRTSpatializerLoadHRTF(string filePath);

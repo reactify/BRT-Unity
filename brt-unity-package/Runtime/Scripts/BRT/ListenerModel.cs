@@ -1,31 +1,22 @@
 using UnityEngine;
 
-[System.Serializable]
-public class ListenerModel
+namespace BRT
 {
-    public string ListenerID;
-    public string ModelID;
-
-    public int HRTFResourceIndex = -1;
-    public int NFCResourceIndex = -1;
-    public bool Enabled;
-    public bool Spatialize;
-    public bool Interpolation;
-    public bool ITD;
-    public bool ParallaxCorrection;
-    public bool NearFieldEffect;
-
-    public ListenerModel()
+    [System.Serializable]
+    public class ListenerModel
     {
-        ListenerID = "Listener_0";
-        ModelID = "Direct_Path";
-        Enabled = true;
-        Spatialize = true;
-        Interpolation = true;
-        ITD = true;
-        ParallaxCorrection = false;
-        NearFieldEffect = false;
-        HRTFResourceIndex = 0;
-        NFCResourceIndex = 0;
+        public string listenerID;
+        public string modelID;
+
+        public int HRTFResourceIndex = -1;
+        public int NFCResourceIndex = -1;
+
+        public ListenerModelParameters parameters;
+        
+        public ListenerModel()
+        {
+            parameters = ListenerModelParameters.Default();
+        }
     }
+
 }

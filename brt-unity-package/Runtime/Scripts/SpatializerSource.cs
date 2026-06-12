@@ -72,7 +72,7 @@ namespace BRT
                 return;
             }
 
-            listenerModelId = listenerModel.ModelID;
+            listenerModelId = listenerModel.modelID;
 
             var listenerEnvironmentModel = configuration.listenerEnvironmentModels?.FirstOrDefault();
 
@@ -82,7 +82,7 @@ namespace BRT
                 return;
             }
 
-            listenerEnvironmentModelId = listenerEnvironmentModel.ModelID;
+            listenerEnvironmentModelId = listenerEnvironmentModel.modelID;
         }
 
         // NOTE: Sound source is created internally by the spatializer plugin
