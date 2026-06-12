@@ -139,26 +139,27 @@ void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
     }
 }
 
-int BRTLibraryWrapper::addSoundSource()
+int BRTLibraryWrapper::addSoundSource (bool autoConnect)
 {
     auto sourceId = getNextSoundSourceId();
     
-    if (createSoundSource (std::to_string (sourceId).c_str()))
+    if (createSoundSource (std::to_string (sourceId).c_str(), autoConnect))
         return sourceId;
     
     releaseSoundSourceId (sourceId);
     return -1;
 }
 
-bool BRTLibraryWrapper::createSoundSource (const char* soundSourceId)
+bool BRTLibraryWrapper::createSoundSource (const char* soundSourceId, bool autoConnect)
 {
     const ScopedSuspendProcessing guard (*this);
     const ScopedManagerSetup managerSetup (brtManager);
     
     if (auto soundSource = brtManager.CreateSoundSource<BRTSourceModel::CSourceOmnidirectionalModel> (soundSourceId))
     {
-        for (auto listenerModel : getListenerModels())
-            listenerModel->ConnectSoundSource (soundSourceId);
+        if (autoConnect)
+            for (auto listenerModel : getListenerModels())
+                listenerModel->ConnectSoundSource (soundSourceId);
         
         return true;
     }

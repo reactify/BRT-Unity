@@ -62,8 +62,8 @@ public:
     bool createListenerModel (const char* listenerModelId);
     
     //==========================================================================
-    int addSoundSource();
-    bool createSoundSource (const char* soundSourceId);
+    int addSoundSource (bool autoConnect = true);
+    bool createSoundSource (const char* soundSourceId, bool autoConnect = true);
     bool removeSoundSource (const char* soundSourceId);
     
     //==========================================================================
