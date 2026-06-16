@@ -13,7 +13,7 @@ public static class BRTResourceCatalog
     
     public const string HRTFResourceFolder = "Data/HRTF/";
     public const string BRIRResourceFolder = "Data/BRIR/";
-    public const string DirectivityResourceFolder = "Data/DirectivityTF/";
+    public const string DirectivityResourceFolder = "Data/Directivity/";
     public const string NFCFilterResourceFolder = "Data/SOSFilters/";
 
     public static void Rebuild()
@@ -22,6 +22,7 @@ public static class BRTResourceCatalog
         NFC = Load(NFCFilterResourceFolder);
         BRIR = Load(BRIRResourceFolder);
         Directivity = Load(DirectivityResourceFolder);
+        Debug.Log("Directivity legnth: " + Directivity.Length);
 
         _built = true;
     }

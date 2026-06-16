@@ -36,6 +36,11 @@ BRTLibraryWrapper::BRTLibraryWrapper (int sampleRate_, int bufferSize_)
 
     outLeftBuffer.resize (bufferSize);
     outRightBuffer.resize (bufferSize);
+    
+    auto& errorHandler = Common::CErrorHandler::Instance();
+    errorHandler.SetAssertMode (ASSERT_MODE_EMPTY);
+    errorHandler.SetVerbosityMode (VERBOSITY_MODE_ALL);
+    errorHandler.SetErrorLogFile ("/Users/ragnaringi/Desktop/BRT_Log.txt");
 }
 
 BRTLibraryWrapper::~BRTLibraryWrapper()
@@ -155,7 +160,7 @@ bool BRTLibraryWrapper::createSoundSource (const char* soundSourceId, bool autoC
     const ScopedSuspendProcessing guard (*this);
     const ScopedManagerSetup managerSetup (brtManager);
     
-    if (auto soundSource = brtManager.CreateSoundSource<BRTSourceModel::CSourceOmnidirectionalModel> (soundSourceId))
+    if (auto soundSource = brtManager.CreateSoundSource<BRTSourceModel::CSourceDirectivityModel> (soundSourceId))
     {
         if (autoConnect)
             for (auto listenerModel : getListenerModels())
@@ -238,6 +243,38 @@ bool BRTLibraryWrapper::setBRIR (const char* brirFile)
     
     BRT_Log (0, "[BRTLIbraryWrapper] Setting BRIR on listener");
     return listener->SetHRBRIR (brir);
+}
+
+bool BRTLibraryWrapper::setDirectivityTF (const char* soundSourceID, const char* directivityFile)
+{
+    auto soundSource = brtManager.GetSoundSource (soundSourceID);
+    
+    if (! soundSource)
+    {
+        BRT_Log (2, "Error setting DirectivityTF. Sound Source " + std::string (soundSourceID) + " not found");
+        return false;
+    }
+    
+    auto directivityTF = std::make_shared<BRTServices::CSphericalInterpolatedFIRTable>();
+    
+    if (! AppUtils::LoadDirectivityTFSofaFile (directivityFile, directivityTF))
+    {
+        BRT_Log (2, "Error loading SOFA DirectivityTF");
+        return false;
+    }
+    
+    return soundSource->SetDirectivity (directivityTF);
+}
+
+void BRTLibraryWrapper::setDirectivityEnabled (const char* soundSourceID, bool enabled)
+{
+    if (auto soundSource = brtManager.GetSoundSource (soundSourceID))
+    {
+        soundSource->SetDirectivityEnable (enabled);
+        return;
+    }
+    
+    BRT_Log (2, "Error setting DirectivityTF. Sound Source " + std::string (soundSourceID) + " not found");
 }
 
 int BRTLibraryWrapper::getNextSoundSourceId()

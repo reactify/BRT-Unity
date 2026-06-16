@@ -38,6 +38,7 @@ struct EffectData
     int sourceID;
     float scaleFactor = 1.0f;
     CMonoBuffer<float> inMonoBuffer;
+    std::shared_ptr<BRTSourceModel::CSourceModelBase> soundSource;
 };
 
 enum Parameter
@@ -92,6 +93,7 @@ CreateCallback (UnityAudioEffectState* state)
 	EffectData* effectdata = new EffectData;
     effectdata->inMonoBuffer.resize (state->dspbuffersize);
     effectdata->sourceID = instanceId;
+    effectdata->soundSource = brtInstance->brtManager.GetSoundSource (std::to_string (instanceId));
     state->effectdata = effectdata;
 
 	return UNITY_AUDIODSP_OK;
@@ -165,11 +167,9 @@ ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer
     EffectData* data = state->GetEffectData<EffectData>();
     
 	// Set source and listener transform
-    auto soundSource = brtInstance->brtManager.GetSoundSource (std::to_string (data->sourceID));
-    
-    if (soundSource)
-        soundSource->SetSourceTransform (ComputeSourceTransformFromMatrix (state->spatializerdata->sourcematrix,
-                                                                           data->scaleFactor));
+    if (data->soundSource)
+        data->soundSource->SetSourceTransform (ComputeSourceTransformFromMatrix (state->spatializerdata->sourcematrix,
+                                                                                 data->scaleFactor));
     
     if (brtInstance->listener)
         brtInstance->listener->SetListenerTransform (ComputeListenerTransformFromMatrix (state->spatializerdata->listenermatrix,
@@ -178,8 +178,8 @@ ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer
 	for (size_t i = 0; i < length; i++)
 		data->inMonoBuffer[i] = (inbuffer[i * 2] + inbuffer[i * 2 + 1]) / 2.0f;	// Average of left and right channels
 
-    if (soundSource)
-        soundSource->SetBuffer (data->inMonoBuffer);
+    if (data->soundSource)
+        data->soundSource->SetBuffer (data->inMonoBuffer);
 
     for (size_t i = 0; i < (size_t) length * std::max (inchannels, outchannels); ++i)
     {

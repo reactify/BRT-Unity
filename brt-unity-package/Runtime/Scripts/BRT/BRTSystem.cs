@@ -190,7 +190,10 @@ namespace BRT
                 return;
             }
 
-            NativePluginWrapper.BRTSpatializerLoadHRTF(fullPath);
+            if (!NativePluginWrapper.BRTSpatializerLoadHRTF(fullPath))
+            {
+                Logger.LogError("Failed to load HRTF");
+            }
         }
 
         public static void SetNFC(int index)
@@ -211,7 +214,10 @@ namespace BRT
                 return;
             }
 
-            NativePluginWrapper.BRTSpatializerLoadNearFieldCompensationFilter(fullPath);
+            if (!NativePluginWrapper.BRTSpatializerLoadNearFieldCompensationFilter(fullPath))
+            {
+                Logger.LogError("Failed to load NFC filter");
+            }
         }
 
         public static void SetBRIR(int index)

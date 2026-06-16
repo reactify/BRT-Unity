@@ -17,22 +17,22 @@ public:
 
         int sampleRateInSOFAFile = sofaReader.GetSampleRateFromSofa(_filePath);
         if (sampleRateInSOFAFile == -1) {
-            std::cout << ("Error loading HRTF Sofa file") << std::endl;
+            BRT_Log (2, "No sample rate in HRTF SOFA file");
             return false;
         }
         if (globalParameters.GetSampleRate() != sampleRateInSOFAFile)
         {
-            std::cout << "The sample rate in HRTF SOFA file doesn't match the configuration." << std::endl;
+            BRT_Log (2, "The sample rate in HRTF SOFA file doesn't match the configuration.");
             return false;
         }
-        std::cout << std::endl << "Loading HRTF SOFA File....." << std::endl << std::endl;
+        BRT_Log (0, "Loading HRTF SOFA File.....");
         bool result = sofaReader.ReadHRTFFromSofa (_filePath, hrtf, HRTFRESAMPLINGSTEP, BRTServices::TEXTRAPOLATION_METHOD::nearest_point);
         if (result) {
-            std::cout << ("HRTF Sofa file loaded successfully.") << std::endl;
+            BRT_Log (0, "HRTF SOFA file loaded successfully.");
             return true;
         }
         else {
-            std::cout << ("Error loading HRTF") << std::endl;
+            BRT_Log (2, "Error loading HRTF SOFA file");
             return false;
         }
     }
@@ -46,25 +46,22 @@ public:
 
         int sampleRateInSOFAFile = sofaReader.GetSampleRateFromSofa(_filePath);
         if (sampleRateInSOFAFile == -1) {
-            std::cout << ("Error loading BRIR Sofa file") << std::endl;
             BRT_Log (2, "No sample rate in BRIR SOFA file");
             return false;
         }
         if (globalParameters.GetSampleRate() != sampleRateInSOFAFile)
         {
-            std::cout << "The sample rate in BRIR SOFA file doesn't match the configuration." << std::endl;
             BRT_Log (2, "The sample rate in BRIR SOFA file doesn't match the configuration.");
             return false;
         }
-        std::cout << std::endl << "Loading BRIR SOFA File....." << std::endl << std::endl;
+        BRT_Log (0, "Loading BRIR SOFA File.....");
         bool result = sofaReader.ReadBRIRFromSofa(_filePath, brir, _fadeWindowThreshold, _fadeInWindowRiseTime, _fadeOutWindowThreshold, _fadeOutWindowRiseTime);
         if (result) {
-            std::cout << ("BRIR Sofa file loaded successfully.") << std::endl;
+            BRT_Log (0, "BRIR SOFA file loaded successfully.");
             return true;
         }
         else {
-            std::cout << ("Error loading BRIR") << std::endl;
-            BRT_Log (2, "Error loading BRIR");
+            BRT_Log (2, "Error loading BRIR SOFA file");
             return false;
         }
     }
@@ -76,26 +73,55 @@ public:
 
         int sampleRateInSOFAFile = sofaReader.GetSampleRateFromSofa(_ildFilePath);
         if (sampleRateInSOFAFile == -1) {
-            std::cout << ("Error loading ILD Sofa file") << std::endl;
+            BRT_Log (2, "No sample rate in ILD SOFA file");
             return false;
         }
         if (globalParameters.GetSampleRate() != sampleRateInSOFAFile)
         {
-            std::cout << "The sample rate in ILD SOFA file" << std::endl;
+            BRT_Log (2, "The sample rate in ILD SOFA file doesn't match the configuration");
             return false;
         }
         
-        std::cout << std::endl << "Loading SOS File....." << std::endl;
+        BRT_Log (0, "Loading ILD SOFA File.....");
         bool result = sofaReader.ReadSOSFiltersFromSofa(_ildFilePath, _sosFilter);
         if (result) {
-            std::cout << "ILD Sofa file loaded successfully: " << std::endl;
+            BRT_Log (0, "ILD SOFA file loaded successfully: ");
             return true;
         }
         else {
-            std::cout << "Error loading HRTF" << std::endl;
+            BRT_Log (2, "Error loading ILD SOFA file");;
             return false;
         }
     }
+    
+    static bool LoadDirectivityTFSofaFile(std::string _directivityFilePath, std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> _directivityTF) {
+            
+        BRTReaders::CSOFAReader sofaReader;
+        Common::CGlobalParameters globalParameters;
+
+        int sampleRateInSOFAFile = sofaReader.GetSampleRateFromSofa(_directivityFilePath);
+        if (sampleRateInSOFAFile == -1) {
+            BRT_Log (2, "No sample rate in DirectivityTF SOFA file");
+            return false;
+        }
+        if (globalParameters.GetSampleRate() != sampleRateInSOFAFile)
+        {
+            BRT_Log (2, "The sample rate in DirectivityTF SOFA file doesn't match the configuration");
+            return false;
+        }
+        
+        BRT_Log (0, "Loading DirectivityTF SOFA File.....");
+        bool result = sofaReader.ReadDirectivityFromSofa(_directivityFilePath, _directivityTF, HRTFRESAMPLINGSTEP, BRTServices::TEXTRAPOLATION_METHOD::nearest_point);
+        if (result) {
+            BRT_Log (0, "DirectivityTF SOFA file loaded successfully: ");
+            return true;
+        }
+        else {
+            BRT_Log (2, "Error loading DirectivityTF SOFA file");
+            return false;
+        }
+    }
+    
 private:
 
 };

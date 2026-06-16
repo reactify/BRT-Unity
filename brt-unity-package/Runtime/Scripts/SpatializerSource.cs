@@ -22,6 +22,13 @@ namespace BRT
             return BRTSystem.ActiveConfig;
         }
 
+        [SerializeField] private bool enableDirectivity;
+
+        private void OnValidate()
+        {
+            EnableDirectivity(enableDirectivity);
+        }
+
         private void Awake()
         {
             audioSource = GetComponent<AudioSource>();
@@ -32,24 +39,32 @@ namespace BRT
         {
             RefreshInstanceId();
             InitialiseIdentifiers();
-            // CreateSoundSource();
-            ConnectToListenerModel();
-            ConnectToListenerEnvironmentModel();
+            // ConnectToListenerModel();
+            // ConnectToListenerEnvironmentModel();
+            SetDirectivityIndex(0);
+            EnableDirectivity(enableDirectivity);
         }
 
         public void SetDirectivityIndex(int index)
         {
-            // if (instanceId < 0 || configuration == null)
-            //     return;
-            //
-            // if (configuration.directivityResources == null || index < 0 || index >= configuration.directivityResources.Count)
-            //     return;
-            //
-            // directivityIndex = index;
-            //
-            // var directivity = configuration.directivityResources[directivityIndex];
-            Logger.LogWarning("TODO: Load directivity");
-            // if (!string.IsNullOrEmpty(directivity.sofaFile))
+            string file = BRTResourceCatalog.GetDirectivity(index);
+            Logger.LogInfo(file);
+            if (file == null) return;
+
+            string path = BRTResourceCatalog.DirectivityResourceFolder + file;
+
+            if (!ResourceExtractor.ExtractToPersistentDataPath(path, path, out string fullPath))
+            {
+                Logger.LogError($"[Directivity] Failed to extract: {file}");
+                return;
+            }
+
+            NativePluginWrapper.BRTLoadSourceDirectivityTF(InstanceId.ToString(), fullPath);
+        }
+
+        public void EnableDirectivity(bool enable)
+        {
+            NativePluginWrapper.BRTSetSourceDirectivityEnabled(InstanceId.ToString(), enable);
         }
         
         private void RefreshInstanceId()

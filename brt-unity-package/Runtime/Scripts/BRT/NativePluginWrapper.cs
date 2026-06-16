@@ -38,6 +38,12 @@ namespace BRT
 
         [DllImport(DLL_NAME)]
         public static extern bool BRTSpatializerLoadBRIR(string filePath);
+        
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTLoadSourceDirectivityTF (string soundSourceID, string directivityFile);
+
+        [DllImport(DLL_NAME)]
+        public static extern void BRTSetSourceDirectivityEnabled (string soundSourceID, bool enabled);
 
         [DllImport(DLL_NAME)]
         public static extern bool BRTSpatializerCreateSoundSource (string soundSourceID);

@@ -144,6 +144,27 @@ bool BRTSpatializerLoadBRIR (const char* brirFile)
     return false;
 }
 
+bool BRTLoadSourceDirectivityTF (const char* soundSourceID, const char* directivityFile)
+{
+    BRT_Log (0, "Loading DirectivityTF " +  std::string (directivityFile));
+    
+    if (auto* brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->setDirectivityTF (soundSourceID, directivityFile);
+    
+    BRT_Log (2, "BRT Error: No spatializer instance found");
+    return false;
+}
+
+void BRTSetSourceDirectivityEnabled (const char* soundSourceID, bool enabled)
+{
+    BRT_Log (0, "Setting Directivity enabled " +  std::string (enabled ? "true" : " false"));
+    
+    if (auto* brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->setDirectivityEnabled (soundSourceID, enabled);
+    
+    BRT_Log (2, "BRT Error: No spatializer instance found");
+}
+
 bool BRTSpatializerCreateSoundSource (const char* sourceId)
 {
     auto sourceIDStr = std::string (sourceId);

@@ -36,6 +36,12 @@ UNITY_AUDIODSP_EXPORT_API
 bool BRTSpatializerLoadBRIR (const char* brirFile);
 
 UNITY_AUDIODSP_EXPORT_API
+bool BRTLoadSourceDirectivityTF (const char* soundSourceID, const char* directivityFile);
+
+UNITY_AUDIODSP_EXPORT_API
+void BRTSetSourceDirectivityEnabled (const char* soundSourceID, bool enabled);
+
+UNITY_AUDIODSP_EXPORT_API
 bool BRTSpatializerCreateSoundSource (const char* sourceId);
 
 UNITY_AUDIODSP_EXPORT_API

@@ -70,6 +70,8 @@ public:
     bool setHRTF (const char* hrtfFile);
     bool setNFCFilter (const char* nfcFilterFile);
     bool setBRIR (const char* brirFile);
+    bool setDirectivityTF (const char* soundSourceID, const char* directivityFile);
+    void setDirectivityEnabled (const char* soundSourceID, bool enabled);
 
     //==========================================================================
     void updateListenerModelParameters (const char* modelId, const ListenerModelParameters* p)
