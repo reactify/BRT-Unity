@@ -38,7 +38,7 @@ struct EffectData
     int sourceID;
     float scaleFactor = 1.0f;
     CMonoBuffer<float> inMonoBuffer;
-    std::shared_ptr<BRTSourceModel::CSourceModelBase> soundSource;
+    std::weak_ptr<BRTSourceModel::CSourceModelBase> soundSource;
 };
 
 enum Parameter
@@ -167,9 +167,11 @@ ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer
     EffectData* data = state->GetEffectData<EffectData>();
     
 	// Set source and listener transform
-    if (data->soundSource)
-        data->soundSource->SetSourceTransform (ComputeSourceTransformFromMatrix (state->spatializerdata->sourcematrix,
-                                                                                 data->scaleFactor));
+    if (auto soundSource = data->soundSource.lock())
+    {
+        auto transform = ComputeSourceTransformFromMatrix (state->spatializerdata->sourcematrix, data->scaleFactor);
+        soundSource->SetSourceTransform (transform);
+    }
     
     if (brtInstance->listener)
         brtInstance->listener->SetListenerTransform (ComputeListenerTransformFromMatrix (state->spatializerdata->listenermatrix,
@@ -178,13 +180,11 @@ ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer
 	for (size_t i = 0; i < length; i++)
 		data->inMonoBuffer[i] = (inbuffer[i * 2] + inbuffer[i * 2 + 1]) / 2.0f;	// Average of left and right channels
 
-    if (data->soundSource)
-        data->soundSource->SetBuffer (data->inMonoBuffer);
+    if (auto soundSource = data->soundSource.lock())
+        soundSource->SetBuffer (data->inMonoBuffer);
 
     for (size_t i = 0; i < (size_t) length * std::max (inchannels, outchannels); ++i)
-    {
         outbuffer[i] = 0.0f;
-    }
 
 	return UNITY_AUDIODSP_OK;
 }

@@ -210,10 +210,57 @@ inline Common::CTransform ComputeListenerTransformFromMatrix(float* listenerMatr
     return listenerTransform;
 }
 
-inline Common::CTransform ComputeSourceTransformFromMatrix(float* sourceMatrix, float scale)
+inline Common::CTransform ComputeSourceTransformFromMatrix(float* M, float scale)
 {
-    // Orientation does not matters for audio sources
     Common::CTransform sourceTransform;
-    sourceTransform.SetPosition(Common::CVector3(sourceMatrix[12] * scale, sourceMatrix[13] * scale, sourceMatrix[14] * scale));
+
+    // POSITION
+    float x = M[12] * scale;
+    float y = M[13] * scale;
+    float z = M[14] * scale;
+
+    sourceTransform.SetPosition(Common::CVector3(x, y, z));
+
+    // ROTATION
+    float tr = M[0] + M[5] + M[10];
+
+    float qw, qx, qy, qz;
+
+    if (tr > 0.0f)
+    {
+        float s = sqrtf(tr + 1.0f) * 2.0f;
+        qw = 0.25f * s;
+        qx = (M[6] - M[9]) / s;
+        qy = (M[8] - M[2]) / s;
+        qz = (M[1] - M[4]) / s;
+    }
+    else if (M[0] > M[5] && M[0] > M[10])
+    {
+        float s = sqrtf(1.0f + M[0] - M[5] - M[10]) * 2.0f;
+        qw = (M[6] - M[9]) / s;
+        qx = 0.25f * s;
+        qy = (M[1] + M[4]) / s;
+        qz = (M[2] + M[8]) / s;
+    }
+    else if (M[5] > M[10])
+    {
+        float s = sqrtf(1.0f + M[5] - M[0] - M[10]) * 2.0f;
+        qw = (M[8] - M[2]) / s;
+        qx = (M[1] + M[4]) / s;
+        qy = 0.25f * s;
+        qz = (M[6] + M[9]) / s;
+    }
+    else
+    {
+        float s = sqrtf(1.0f + M[10] - M[0] - M[5]) * 2.0f;
+        qw = (M[1] - M[4]) / s;
+        qx = (M[2] + M[8]) / s;
+        qy = (M[6] + M[9]) / s;
+        qz = 0.25f * s;
+    }
+
+    Common::CQuaternion q(qw, qx, qy, qz);
+    sourceTransform.SetOrientation(q);
+
     return sourceTransform;
 }

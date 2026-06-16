@@ -14,35 +14,25 @@ namespace BRT
         private string listenerEnvironmentModelId;
         private int instanceId = -1;
         public int InstanceId => instanceId;
-        public int directivityIndex = 0;
-
-        [SerializeField] private BRTConfiguration configuration;
-        public BRTConfiguration GetConfiguration()
-        {
-            return BRTSystem.ActiveConfig;
-        }
 
         [SerializeField] private bool enableDirectivity;
 
         private void OnValidate()
         {
-            EnableDirectivity(enableDirectivity);
+            if (!Application.isPlaying) return;
+            ApplyDirectivity();
         }
 
         private void Awake()
         {
             audioSource = GetComponent<AudioSource>();
-            configuration = GetConfiguration();
         }
 
         private void Start()
         {
             RefreshInstanceId();
-            InitialiseIdentifiers();
-            // ConnectToListenerModel();
-            // ConnectToListenerEnvironmentModel();
             SetDirectivityIndex(0);
-            EnableDirectivity(enableDirectivity);
+            ApplyDirectivity();
         }
 
         public void SetDirectivityIndex(int index)
@@ -62,9 +52,10 @@ namespace BRT
             NativePluginWrapper.BRTLoadSourceDirectivityTF(InstanceId.ToString(), fullPath);
         }
 
-        public void EnableDirectivity(bool enable)
+        private void ApplyDirectivity()
         {
-            NativePluginWrapper.BRTSetSourceDirectivityEnabled(InstanceId.ToString(), enable);
+            if (instanceId < 0) return;
+            NativePluginWrapper.BRTSetSourceDirectivityEnabled(instanceId.ToString(), enableDirectivity);
         }
         
         private void RefreshInstanceId()
@@ -75,51 +66,6 @@ namespace BRT
                 Debug.LogWarning("[SpatialiserSource] Could not get instance ID from spatialiser plugin", this);
             
             Debug.Log("BRT: Instance id " + instanceId, this);
-        }
-
-        private void InitialiseIdentifiers()
-        {
-            var listenerModel = configuration.listenerModels?.FirstOrDefault();
-
-            if (listenerModel == null)
-            {
-                Debug.LogError("BRT: No listener model found");
-                return;
-            }
-
-            listenerModelId = listenerModel.modelID;
-
-            var listenerEnvironmentModel = configuration.listenerEnvironmentModels?.FirstOrDefault();
-
-            if (listenerEnvironmentModel == null)
-            {
-                Debug.LogError("BRT: No listener environment model found");
-                return;
-            }
-
-            listenerEnvironmentModelId = listenerEnvironmentModel.modelID;
-        }
-
-        // NOTE: Sound source is created internally by the spatializer plugin
-        // We leave this here for possible future use
-        private void CreateSoundSource()
-        {
-            if (!NativePluginWrapper.BRTSpatializerCreateSoundSource(InstanceId.ToString()))
-                Debug.LogError("BRT: Error creating sound source " + InstanceId.ToString());
-        }
-
-        private void ConnectToListenerModel()
-        {
-            if (!NativePluginWrapper.BRTSpatializerConnectSoundSource(InstanceId.ToString(), listenerModelId))
-            {
-                Debug.LogError("BRT: Error connecting sound source " + InstanceId.ToString() + " to listener model " + listenerModelId);
-            }
-        }
-        
-        private void ConnectToListenerEnvironmentModel()
-        {   
-            if (!NativePluginWrapper.BRTSpatializerConnectSoundSource(InstanceId.ToString(), listenerEnvironmentModelId))
-                Debug.LogError("BRT: Error connecting sound source " + InstanceId.ToString() + " to listener environment model " + listenerEnvironmentModelId);
         }
     }
 }

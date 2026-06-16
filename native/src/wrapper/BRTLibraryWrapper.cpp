@@ -268,6 +268,8 @@ bool BRTLibraryWrapper::setDirectivityTF (const char* soundSourceID, const char*
 
 void BRTLibraryWrapper::setDirectivityEnabled (const char* soundSourceID, bool enabled)
 {
+    BRT_Log (0, "Setting DirectivityTF. Sound Source " + std::string (soundSourceID));
+    
     if (auto soundSource = brtManager.GetSoundSource (soundSourceID))
     {
         soundSource->SetDirectivityEnable (enabled);

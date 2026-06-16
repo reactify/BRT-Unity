@@ -15,8 +15,8 @@ MonoBehaviour:
   listenerModels:
   - listenerID: Listener_0
     modelID: Direct_Path
-    HRTFResourceIndex: 0
-    NFCResourceIndex: 1
+    HRTFResourceIndex: 1
+    NFCResourceIndex: 2
     parameters:
       enabled: 1
       spatializationEnabled: 1
