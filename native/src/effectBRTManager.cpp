@@ -97,16 +97,14 @@ namespace BRTManager
     ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer,
                      unsigned int length, int inchannels, int outchannels)
 	{
-		if (inchannels != 2 || outchannels != 2)
-		{
-            BRT_Log (2, "Incorrect channel count in BRTManager plugin");
-			return UNITY_AUDIODSP_ERR_UNSUPPORTED;
-		}
-        
         auto* brtInstance = BRTLibraryWrapper::instance();
 
-        if (! brtInstance || ! brtInstance->isCompatible (state->samplerate, state->dspbuffersize))
-            return UNITY_AUDIODSP_ERR_UNSUPPORTED;
+        if (inchannels != 2 || outchannels != 2 ||
+          ! brtInstance || ! brtInstance->isCompatible (state->samplerate, state->dspbuffersize))
+        {
+            memcpy (outbuffer, inbuffer, length * outchannels * sizeof (float));
+            return UNITY_AUDIODSP_OK;
+        }
 
         brtInstance->process (inbuffer, outbuffer, length, inchannels, outchannels);
 

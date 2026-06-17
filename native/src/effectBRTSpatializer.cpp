@@ -161,8 +161,12 @@ ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer
 {
     auto* brtInstance = BRTLibraryWrapper::instance();
 
-    if (! brtInstance || ! brtInstance->isCompatible (state->samplerate, state->dspbuffersize))
-        return UNITY_AUDIODSP_ERR_UNSUPPORTED;
+    if (inchannels != 2 || outchannels != 2 ||
+      ! brtInstance || ! brtInstance->isCompatible (state->samplerate, state->dspbuffersize))
+    {
+        memcpy (outbuffer, inbuffer, length * outchannels * sizeof (float));
+        return UNITY_AUDIODSP_OK;
+    }
  
     EffectData* data = state->GetEffectData<EffectData>();
     
@@ -173,9 +177,9 @@ ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer
         soundSource->SetSourceTransform (transform);
     }
     
-    if (brtInstance->listener)
-        brtInstance->listener->SetListenerTransform (ComputeListenerTransformFromMatrix (state->spatializerdata->listenermatrix,
-                                                                                         data->scaleFactor));
+    if (auto listener = brtInstance->listener)
+        listener->SetListenerTransform (ComputeListenerTransformFromMatrix (state->spatializerdata->listenermatrix,
+                                                                            data->scaleFactor));
 	// Transform input buffer
 	for (size_t i = 0; i < length; i++)
 		data->inMonoBuffer[i] = (inbuffer[i * 2] + inbuffer[i * 2 + 1]) / 2.0f;	// Average of left and right channels
