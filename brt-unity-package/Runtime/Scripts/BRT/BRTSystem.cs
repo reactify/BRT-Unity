@@ -62,7 +62,7 @@ namespace BRT
 
             Logger.LogInfo("BRT.System.Shutdown()");
 
-            // NativePluginWrapper.BRTSpatializerDestroy();
+            NativePluginWrapper.BRTSpatializerDestroy();
 
             ClearState();
         }
@@ -157,12 +157,18 @@ namespace BRT
         {
             NativePluginWrapper.BRTSpatializerCreateListener(listener.listenerID);
 
-            NativePluginWrapper.BRTSpatializerCreateListenerModel(0, listener.modelID);
+            var listenerModelType =
+                (int)(_activeConfig?.listenerModels?[0].parameters.type 
+                      ?? ListenerModelType.DirectHRTFConvolutionModel);
+            NativePluginWrapper.BRTSpatializerCreateListenerModel(listenerModelType, listener.modelID);
             NativePluginWrapper.BRTSpatializerConnectListenerModel(
                 listener.listenerID,
                 listener.modelID);
 
-            NativePluginWrapper.BRTSpatializerCreateListenerModel(1, env.modelID);
+            listenerModelType =
+                (int)(_activeConfig?.listenerEnvironmentModels?[0].parameters.type 
+                      ?? ListenerModelType.DirectBRIRConvolutionModel);
+            NativePluginWrapper.BRTSpatializerCreateListenerModel(listenerModelType, env.modelID);
             NativePluginWrapper.BRTSpatializerConnectListenerModel(
                 env.listenerID,
                 env.modelID);

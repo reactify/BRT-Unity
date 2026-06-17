@@ -18,6 +18,7 @@ MonoBehaviour:
     HRTFResourceIndex: 1
     NFCResourceIndex: 2
     parameters:
+      type: 1
       enabled: 1
       spatializationEnabled: 1
       interpolationEnabled: 1
@@ -28,8 +29,9 @@ MonoBehaviour:
   listenerEnvironmentModels:
   - listenerID: Listener_0
     modelID: Reverb_Path
-    BRIRResourceIndex: 3
+    BRIRResourceIndex: 4
     parameters:
+      type: 3
       enabled: 1
       spatializationEnabled: 1
       interpolationEnabled: 1

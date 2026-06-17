@@ -4,9 +4,16 @@
 namespace BRTUnity
 {
 
+enum class ListenerModelType : int
+{
+    DirectHRTFConvolutionModel = 0,
+    AmbisonicVirtualLoudspeakersModel = 1
+};
+
 #pragma pack(push, 1)
 struct ListenerModelParameters
 {
+    ListenerModelType type;
     bool enabled = true;
     bool spatializationEnabled = true;
     bool interpolationEnabled = true;

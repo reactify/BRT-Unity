@@ -22,7 +22,6 @@ public static class BRTResourceCatalog
         NFC = Load(NFCFilterResourceFolder);
         BRIR = Load(BRIRResourceFolder);
         Directivity = Load(DirectivityResourceFolder);
-        Debug.Log("Directivity legnth: " + Directivity.Length);
 
         _built = true;
     }

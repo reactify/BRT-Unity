@@ -61,7 +61,11 @@ bool BRTSpatializerCreateListenerModel (int type, const char* listenerModelId)
         case 0:
             return brtInstance->createListenerModel<CListenerDirectHRTFConvolutionModel> (listenerModelId);
         case 1:
+            return brtInstance->createListenerModel<CListenerAmbisonicVirtualLoudspeakersModel> (listenerModelId);
+        case 2:
             return brtInstance->createListenerModel<CListenerDirectBRIRConvolutionModel> (listenerModelId);
+        case 3:
+            return brtInstance->createListenerModel<CListenerAmbisonicReverberantVirtualLoudspeakersModel> (listenerModelId);
         default:
             return brtInstance->createListenerModel<CListenerDirectHRTFConvolutionModel> (listenerModelId);
     }

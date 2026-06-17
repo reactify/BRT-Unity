@@ -16,6 +16,7 @@ namespace BRT
         public int InstanceId => instanceId;
 
         [SerializeField] private bool enableDirectivity;
+        [SerializeField] private bool showOrientation;
 
         private void OnValidate()
         {
@@ -33,6 +34,16 @@ namespace BRT
             RefreshInstanceId();
             SetDirectivityIndex(0);
             ApplyDirectivity();
+        }
+
+        void Update()
+        {
+            if (!showOrientation)
+                return;
+            
+            Debug.DrawRay(transform.position, transform.forward * 2f, Color.red);
+            Debug.DrawRay(transform.position, transform.up * 2f, Color.green);
+            Debug.DrawRay(transform.position, transform.right * 2f, Color.blue);
         }
 
         public void SetDirectivityIndex(int index)
