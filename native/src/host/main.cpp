@@ -1,16 +1,56 @@
 
-#include "host/AudioHost.h"
 #include <iostream>
+#include "host/AudioHost.h"
+#include "AudioPluginBRTUnity.h"
+#include "BRTLibraryWrapper.h"
 
 int main()
 {
     AudioHost host;
 
-    if (!host.start(48000, 256, 2))
+    if (! host.start(48000, 256, 2))
     {
         std::cerr << "Failed to start audio host\n";
         return -1;
     }
+    
+    int length = 256;
+    
+    BRTSpatializerResetIfNeeded (44100, length);
+    BRTSpatializerCreateListener ("Listener_0");
+    BRTSpatializerCreateListenerModel (0, "Direct_Path");
+    BRTSpatializerConnectListenerModel ("Listener_0", "Direct_Path");
+    BRTSpatializerCreateListenerModel (1, "Reverb_Path");
+    BRTSpatializerConnectListenerModel ("Listener_0", "Reverb_Path");
+    BRTSpatializerCreateSoundSource ("Source_0");
+    BRTLoadSourceDirectivityTF ("Source_0", "/Users/ragnaringi/Desktop/Cardioid_LP_30dB_512s_resampled10_normalized_fir_512.sofa");
+    BRTSetSourceDirectivityEnabled ("Source_0", true);
+    
+    BRTSpatializerDestroy();
+    BRTSpatializerResetIfNeeded (44100, length);
+    BRTSetSourceDirectivityEnabled ("Source_0", true);
+    
+    // BRTSptializer
+    
+    float inbuffer[1024];
+    float outbuffer[1024];
+    int inchannels = 2;
+    int outchannels = 2;
+    
+    CMonoBuffer<float> inMonoBuffer (length);
+    
+    auto* brtInstance = BRTUnity::BRTLibraryWrapper::instance();
+    
+    auto soundSource = brtInstance->brtManager.GetSoundSource ("Source_0");
+    
+    // Transform input buffer
+    for (size_t i = 0; i < length; i++)
+        inMonoBuffer[i] = (inbuffer[i * 2] + inbuffer[i * 2 + 1]) / 2.0f;
+
+    if (soundSource)
+        soundSource->SetBuffer (inMonoBuffer);
+    
+    brtInstance->process (inbuffer, outbuffer, length, inchannels, outchannels);
 
     std::cout << "Audio host running. Press Enter to exit...\n";
     std::cin.get();
