@@ -58,6 +58,9 @@ public:
     void process (float* in, float* out, unsigned int len, int inCh, int outCh) noexcept;
     
     //==========================================================================
+    bool createListener (const char* listenerID);
+    bool removeListener (const char* listenerID);
+    
     template <typename ListenerModelType>
     bool createListenerModel (const char* listenerModelId);
     

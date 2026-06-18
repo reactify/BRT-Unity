@@ -19,7 +19,11 @@ namespace BRT
         public static extern void BRTSpatializerDestroy();
 
         [DllImport(DLL_NAME)]
-        public static extern bool BRTSpatializerCreateListener(string listenerId);
+        public static extern bool BRTCreateListener(string listenerId);
+        
+        
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTRemoveListener(string listenerId);
 
         [DllImport(DLL_NAME)]
         public static extern bool BRTSpatializerCreateListenerModel(int type, string modelName);

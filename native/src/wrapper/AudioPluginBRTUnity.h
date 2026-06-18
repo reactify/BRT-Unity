@@ -15,7 +15,10 @@ UNITY_AUDIODSP_EXPORT_API
 void BRTSpatializerDestroy();
 
 UNITY_AUDIODSP_EXPORT_API
-bool BRTSpatializerCreateListener (const char* listenerId);
+bool BRTCreateListener (const char* listenerID);
+
+UNITY_AUDIODSP_EXPORT_API
+bool BRTRemoveListener (const char* listenerID);
 
 UNITY_AUDIODSP_EXPORT_API
 bool BRTSpatializerCreateListenerModel (int type, const char* listenerModelId);

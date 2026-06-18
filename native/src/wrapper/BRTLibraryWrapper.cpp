@@ -144,6 +144,34 @@ void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
     }
 }
 
+//==============================================================================
+bool BRTLibraryWrapper::createListener (const char* listenerID)
+{
+    const ScopedSuspendProcessing guard (*this);
+    const ScopedManagerSetup managerSetup (brtManager);
+    
+    if (auto listener = brtManager.CreateListener<BRTBase::CListener> (listenerID))
+    {
+        this->listener = listener;
+        return true;
+    }
+    
+    return false;
+}
+
+bool BRTLibraryWrapper::removeListener (const char* listenerID)
+{
+    const ScopedSuspendProcessing guard (*this);
+    const ScopedManagerSetup managerSetup (brtManager);
+    
+    auto success = brtManager.RemoveListener (listenerID);
+    
+    if (brtManager.GetListenerIDs().size() == 0)
+        this->listener = nullptr;
+    
+    return success;
+}
+
 int BRTLibraryWrapper::addSoundSource (bool autoConnect)
 {
     auto sourceId = getNextSoundSourceId();

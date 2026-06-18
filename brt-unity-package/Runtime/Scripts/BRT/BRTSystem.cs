@@ -155,7 +155,7 @@ namespace BRT
 
         private static void ApplyListener(ListenerModel listener, ListenerEnvironmentModel env)
         {
-            NativePluginWrapper.BRTSpatializerCreateListener(listener.listenerID);
+            NativePluginWrapper.BRTCreateListener(listener.listenerID);
 
             var listenerModelType =
                 (int)(_activeConfig?.listenerModels?[0].parameters.type 
