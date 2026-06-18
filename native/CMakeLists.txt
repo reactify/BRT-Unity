@@ -11,6 +11,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(UNITY_PLUGIN_DEV_MODE "Use timestamped external builds + symlink for Unity" OFF)
+
 # Default to MODULE (macOS bundle / Windows DLL / Android SO)
 set(LIB_TYPE MODULE)
 
@@ -51,6 +53,9 @@ set(BRT_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/lib/BRTLibrary")
 set(SOFA_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/lib/BRTLibrary/include/third_party_libraries/libmysofa")
 set(UNITY_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/../brt-unity-package")
 set(PLUGIN_OUTPUT_DIR "${UNITY_PACKAGE_DIR}/Runtime/Plugins")
+
+# DEV build output (outside Unity project, used only in UNITY_PLUGIN_DEV_MODE)
+set(MACOS_BUILD_DIR "${CMAKE_BINARY_DIR}/plugin_builds")
 
 # Platform-specific output dirs
 if(WIN32)
@@ -131,11 +136,24 @@ if(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         "${SOFA_LIBRARY_DIR}/lib/osx/universal/libmysofa.a"
     )
 
-    add_custom_command(TARGET AudioPluginBRTUnity POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "$<TARGET_BUNDLE_DIR:AudioPluginBRTUnity>"
-            "${PLUGIN_OUTPUT_DIR}/AudioPluginBRTUnity.bundle"
-    )
+    if(UNITY_PLUGIN_DEV_MODE)
+
+        add_custom_command(TARGET AudioPluginBRTUnity POST_BUILD
+            COMMAND ${CMAKE_SOURCE_DIR}/cmake/post_build_macos.sh
+                "$<TARGET_BUNDLE_DIR:AudioPluginBRTUnity>"
+                "${MACOS_BUILD_DIR}"
+                "${PLUGIN_OUTPUT_DIR}"
+        )
+
+    else()
+
+        add_custom_command(TARGET AudioPluginBRTUnity POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "$<TARGET_BUNDLE_DIR:AudioPluginBRTUnity>"
+                "${PLUGIN_OUTPUT_DIR}/AudioPluginBRTUnity.bundle"
+        )
+
+    endif()
 
 # -------------------------
 # iOS (Static Library)
