@@ -75,10 +75,13 @@ public:
     bool removeListener (const char* listenerID);
     
     template <typename ListenerModelType>
-    bool createListenerModel (const char* listenerModelId);
+    bool createListenerModel (const char* listenerModelID);
+    bool removeListenerModel (const char* listenerModelID);
+    bool connectListenerModel (const char* listenerModelID, const char* listenerID);
+    
+    void clearGraph();
     
     //==========================================================================
-    int addSoundSource (bool autoConnect = true);
     bool createSoundSource (const char* soundSourceId, bool autoConnect = true);
     bool removeSoundSource (const char* soundSourceId);
     

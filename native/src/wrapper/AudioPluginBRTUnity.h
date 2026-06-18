@@ -21,10 +21,16 @@ UNITY_AUDIODSP_EXPORT_API
 bool BRTRemoveListener (const char* listenerID);
 
 UNITY_AUDIODSP_EXPORT_API
-bool BRTSpatializerCreateListenerModel (int type, const char* listenerModelId);
+bool BRTCreateListenerModel (int type, const char* listenerModelId);
 
 UNITY_AUDIODSP_EXPORT_API
-bool BRTSpatializerConnectListenerModel (const char* listenerId, const char* listenerModelId);
+bool BRTRemoveListenerModel (const char* listenerModelId);
+
+UNITY_AUDIODSP_EXPORT_API
+bool BRTConnectListenerModel (const char* listenerId, const char* listenerModelId);
+
+UNITY_AUDIODSP_EXPORT_API
+void BRTClearGraph();
 
 UNITY_AUDIODSP_EXPORT_API
 void BRTSetListenerModelParameters (const char* listenerModelId, const BRTUnity::ListenerModelParameters* params);

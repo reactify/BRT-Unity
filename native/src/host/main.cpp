@@ -18,14 +18,15 @@ int main()
     
     BRTSpatializerResetIfNeeded (44100, length);
     BRTCreateListener ("Listener_0");
-    BRTSpatializerCreateListenerModel (0, "Direct_Path");
-    BRTSpatializerConnectListenerModel ("Listener_0", "Direct_Path");
-    BRTSpatializerCreateListenerModel (1, "Reverb_Path");
-    BRTSpatializerConnectListenerModel ("Listener_0", "Reverb_Path");
+    BRTCreateListenerModel (0, "Direct_Path");
+    BRTConnectListenerModel ("Listener_0", "Direct_Path");
+    BRTCreateListenerModel (1, "Reverb_Path");
+    BRTConnectListenerModel ("Listener_0", "Reverb_Path");
     BRTCreateSoundSource ("Source_0");
     BRTLoadSourceDirectivityTF ("Source_0", "/Users/ragnaringi/Desktop/Cardioid_LP_30dB_512s_resampled10_normalized_fir_512.sofa");
     BRTSetSourceDirectivityEnabled ("Source_0", true);
     
+    BRTClearGraph();
     BRTSpatializerDestroy();
     BRTSpatializerResetIfNeeded (44100, length);
     BRTSetSourceDirectivityEnabled ("Source_0", true);

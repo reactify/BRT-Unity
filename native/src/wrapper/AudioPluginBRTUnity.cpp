@@ -40,7 +40,7 @@ bool BRTRemoveListener (const char* listenerID)
     return false;
 }
 
-bool BRTSpatializerCreateListenerModel (int type, const char* listenerModelId)
+bool BRTCreateListenerModel (int type, const char* listenerModelId)
 {
     BRT_Log (0, "Creating Listener Model: " +  std::string (listenerModelId) + " of type: " + std::to_string (type));
     
@@ -69,37 +69,36 @@ bool BRTSpatializerCreateListenerModel (int type, const char* listenerModelId)
     }
 }
 
-bool BRTSpatializerConnectListenerModel (const char* listenerId, const char* listenerModelId)
+bool BRTRemoveListenerModel (const char* listenerModelID)
+{
+    BRT_Log (0, "Removing Listener Model: " +  std::string (listenerModelID));
+    
+    if (auto* brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->removeListenerModel (listenerModelID);
+    
+    BRT_Log (2, "BRT Error: No spatializer instance found");
+    return false;
+}
+
+bool BRTConnectListenerModel (const char* listenerId, const char* listenerModelId)
 {
     BRT_Log (0, "Connecting Listener Model: " +  std::string (listenerModelId) + " to listener: " + std::string (listenerId));
     
-    auto* brtInstance = BRTLibraryWrapper::instance();
+    if (auto* brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->connectListenerModel (listenerModelId, listenerId);
     
-    if (brtInstance == nullptr)
-    {
-        BRT_Log (2, "BRT Error: No spatializer instance found");
-        return false;
-    }
+    BRT_Log (2, "BRT Error: No spatializer instance found");
+    return false;
+}
+
+void BRTClearGraph()
+{
+    BRT_Log (0, "BRTClearGraph");
     
-    auto& brtManager = brtInstance->brtManager;
+    if (auto* brtInstance = BRTLibraryWrapper::instance())
+        brtInstance->clearGraph();
     
-    if (auto listener = brtManager.GetListener (listenerId))
-    {
-        const ScopedManagerSetup sm (brtManager);
-        
-        if (! listener->ConnectListenerModel (listenerModelId))
-        {
-            BRT_Log (2, "BRT: Error connecting listener model");
-            return false;
-        }
-        
-        BRT_Log (0,"Connected listener model " + std::string (listenerModelId));
-        
-        return true;
-    }
-    
-    BRT_Log (2, "BRT: No listener found");
-    
+    BRT_Log (2, "BRT Error: No spatializer instance found");
     return false;
 }
 
@@ -108,9 +107,10 @@ void BRTSetListenerModelParameters (const char* listenerModelId, const BRTUnity:
     BRT_Log (0, "BRTSetListenerModelParameters");
     
     if (auto* brtInstance = BRTLibraryWrapper::instance())
-    {
         brtInstance->updateListenerModelParameters (listenerModelId, params);
-    }
+    
+    BRT_Log (2, "BRT Error: No spatializer instance found");
+    return false;
 }
 
 bool BRTSpatializerLoadHRTF (const char* hrtfFile) // TODO: return index?

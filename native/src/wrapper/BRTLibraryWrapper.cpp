@@ -172,6 +172,51 @@ bool BRTLibraryWrapper::removeListener (const char* listenerID)
     return success;
 }
 
+bool BRTLibraryWrapper::removeListenerModel (const char* listenerModelID)
+{
+    const ScopedSuspendProcessing guard (*this);
+    const ScopedManagerSetup managerSetup (brtManager);
+    
+    return brtManager.RemoveListenerModel (listenerModelID);
+}
+
+bool BRTLibraryWrapper::connectListenerModel (const char* listenerModelID, const char* listenerID)
+{
+    const ScopedSuspendProcessing guard (*this);
+    const ScopedManagerSetup sm (brtManager);
+    
+    if (auto listener = brtManager.GetListener (listenerID))
+    {
+        if (! listener->ConnectListenerModel (listenerModelID))
+        {
+            BRT_Log (2, "BRT: Error connecting listener model");
+            return false;
+        }
+        
+        BRT_Log (0,"Connected listener model " + std::string (listenerModelID));
+        
+        return true;
+    }
+    
+    BRT_Log (2, "BRT: No listener found");
+    
+    return false;
+}
+
+void BRTLibraryWrapper::clearGraph()
+{
+    const ScopedSuspendProcessing guard (*this);
+    const ScopedManagerSetup sm (brtManager);
+    
+    for (auto listenerID : brtManager.GetListenerIDs())
+        brtManager.RemoveListener (listenerID);
+    
+    for (auto listenerModelID : brtManager.GetListenerModelIDs())
+        brtManager.RemoveListenerModel (listenerModelID);
+    
+    listener = nullptr;
+}
+
 bool BRTLibraryWrapper::createSoundSource (const char* soundSourceId, bool autoConnect)
 {
     const ScopedSuspendProcessing guard (*this);
