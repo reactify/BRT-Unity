@@ -6,6 +6,7 @@
 #include "AudioPluginUtil.h"
 #include "AppUtils.h"
 #include "Logging.h"
+#include "IDGenerator.h"
 
 // DEBUG LOG 
 #ifdef UNITY_ANDROID
@@ -33,6 +34,19 @@ namespace BRTSpatializer
 
 using namespace BRTUnity;
 
+class GlobalIdPool {
+public:
+    static IdPool& instance() {
+        static IdPool pool;   // thread-safe in C++11+
+        return pool;
+    }
+
+private:
+    GlobalIdPool() = default;
+};
+
+
+//================================================================================
 struct EffectData
 {
     int sourceID;
@@ -85,7 +99,10 @@ CreateCallback (UnityAudioEffectState* state)
     
     auto* brtInstance = BRTLibraryWrapper::instance();
     
-    auto instanceId = brtInstance->addSoundSource();
+    auto instanceId = GlobalIdPool::instance().acquire();
+    BRT_Log (0, "[effectBRTSpatializer] ID Generated " + std::to_string (instanceId));
+    
+    brtInstance->createSoundSource (std::to_string (instanceId).c_str());
     BRT_Log (0, "[effectBRTSpatializer] Created Spatializer Source " + std::to_string (instanceId));
 
     state->spatializerdata->distanceattenuationcallback = DistanceAttenuationCallback;
@@ -104,6 +121,8 @@ ReleaseCallback (UnityAudioEffectState* state)
 {
 	if (EffectData* data = state->GetEffectData<EffectData>())
     {
+        GlobalIdPool::instance().release (data->sourceID);
+        
         if (auto* brtInstance = BRTLibraryWrapper::instance())
         {
             BRT_Log (0, "[effectBRTSpatializer] Removing Spatializer Source");
