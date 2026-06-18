@@ -6,7 +6,6 @@
 #include "AudioPluginUtil.h"
 #include "AppUtils.h"
 #include "Logging.h"
-#include "IDGenerator.h"
 
 // DEBUG LOG 
 #ifdef UNITY_ANDROID
@@ -33,18 +32,6 @@ namespace BRTSpatializer
 {
 
 using namespace BRTUnity;
-
-class GlobalIdPool {
-public:
-    static IdPool& instance() {
-        static IdPool pool;   // thread-safe in C++11+
-        return pool;
-    }
-
-private:
-    GlobalIdPool() = default;
-};
-
 
 //================================================================================
 struct EffectData

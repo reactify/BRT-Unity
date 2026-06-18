@@ -7,9 +7,22 @@
 #include "BRTLibrary.h"
 #include "Parameters.h"
 #include "VersionedParameters.h"
+#include "IdPool.h"
 
 namespace BRTUnity
 {
+
+class GlobalIdPool {
+public:
+    static IdPool& instance() {
+        static IdPool pool;   // thread-safe in C++11+
+        return pool;
+    }
+
+private:
+    GlobalIdPool() = default;
+};
+
 
 class BRTLibraryWrapper;
 
@@ -69,6 +82,15 @@ public:
     bool createSoundSource (const char* soundSourceId, bool autoConnect = true);
     bool removeSoundSource (const char* soundSourceId);
     
+    void reconnectAllSoundSources()
+    {
+        GlobalIdPool::instance().for_each_active ([&] (int id)
+        {
+            for (auto model : getListenerModels())
+                model->ConnectSoundSource (std::to_string (id));
+        });
+    }
+    
     //==========================================================================
     bool setHRTF (const char* hrtfFile);
     bool setNFCFilter (const char* nfcFilterFile);
@@ -89,9 +111,6 @@ private:
     //==========================================================================
     BRTLibraryWrapper (int sampleRate, int bufferSize);
     ~BRTLibraryWrapper();
-    
-    int getNextSoundSourceId();
-    void releaseSoundSourceId (int soundSourceId);
     
     void applyListenerModelParameters (const char* modelId, const ListenerModelParameters* p);
     
@@ -114,9 +133,7 @@ private:
     int sampleRate, bufferSize;
     CMonoBuffer<float> outLeftBuffer;
     CMonoBuffer<float> outRightBuffer;
-    std::bitset<128> soundSourceIds;
     std::atomic<bool> suspended;
-    std::mutex mutex;
 };
 
 

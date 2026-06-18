@@ -172,17 +172,6 @@ bool BRTLibraryWrapper::removeListener (const char* listenerID)
     return success;
 }
 
-int BRTLibraryWrapper::addSoundSource (bool autoConnect)
-{
-    auto sourceId = getNextSoundSourceId();
-    
-    if (createSoundSource (std::to_string (sourceId).c_str(), autoConnect))
-        return sourceId;
-    
-    releaseSoundSourceId (sourceId);
-    return -1;
-}
-
 bool BRTLibraryWrapper::createSoundSource (const char* soundSourceId, bool autoConnect)
 {
     const ScopedSuspendProcessing guard (*this);
@@ -204,8 +193,6 @@ bool BRTLibraryWrapper::removeSoundSource (const char* soundSourceId)
 {
     const ScopedSuspendProcessing guard (*this);
     const ScopedManagerSetup managerSetup (brtManager);
-    
-    releaseSoundSourceId (std::stoi (soundSourceId));
     
     for (const auto& listenerModel : getListenerModels())
         listenerModel->DisconnectSoundSource (soundSourceId);
@@ -305,30 +292,6 @@ void BRTLibraryWrapper::setDirectivityEnabled (const char* soundSourceID, bool e
     }
     
     BRT_Log (2, "Error setting DirectivityTF. Sound Source " + std::string (soundSourceID) + " not found");
-}
-
-int BRTLibraryWrapper::getNextSoundSourceId()
-{
-    std::lock_guard<std::mutex> lock (mutex);
-    
-    for (int i = 0; i < soundSourceIds.size(); ++i)
-    {
-        if (! soundSourceIds.test (i))
-        {
-            soundSourceIds.set (i);
-            return i;
-        }
-    }
-    return -1; // out of IDs
-}
-
-void BRTLibraryWrapper::releaseSoundSourceId (int soundSourceId)
-{
-    if (soundSourceId < 0 || soundSourceId >= static_cast<int> (soundSourceIds.size()))
-        return;
-    
-    std::lock_guard<std::mutex> lock (mutex);
-    soundSourceIds.reset (soundSourceId);
 }
 
 void BRTLibraryWrapper::applyListenerModelParameters (const char* modelId,

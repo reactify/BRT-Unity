@@ -45,10 +45,13 @@ UNITY_AUDIODSP_EXPORT_API
 void BRTSetSourceDirectivityEnabled (const char* soundSourceID, bool enabled);
 
 UNITY_AUDIODSP_EXPORT_API
-bool BRTSpatializerCreateSoundSource (const char* sourceId);
+bool BRTCreateSoundSource (const char* sourceId);
 
 UNITY_AUDIODSP_EXPORT_API
-bool BRTSpatializerConnectSoundSource (const char* soundSourceID, const char* listenerModelID);
+bool BRTConnectSoundSource (const char* soundSourceID, const char* listenerModelID);
+
+UNITY_AUDIODSP_EXPORT_API
+void BRTReconnectAllSoundSources();
 
 #ifdef __cplusplus
 }

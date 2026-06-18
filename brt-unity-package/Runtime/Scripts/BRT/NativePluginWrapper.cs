@@ -50,10 +50,13 @@ namespace BRT
         public static extern void BRTSetSourceDirectivityEnabled (string soundSourceID, bool enabled);
 
         [DllImport(DLL_NAME)]
-        public static extern bool BRTSpatializerCreateSoundSource (string soundSourceID);
+        public static extern bool BRTCreateSoundSource (string soundSourceID);
 
         [DllImport(DLL_NAME)]
-        public static extern bool BRTSpatializerConnectSoundSource (string soundSourceID, string listenerModelID);
+        public static extern bool BRTConnectSoundSource (string soundSourceID, string listenerModelID);
+
+        [DllImport(DLL_NAME)]
+        public static extern void BRTReconnectAllSoundSources();
 
         [DllImport(DLL_NAME)]
         public static extern bool BRTManagerSetBypassed (bool bypass);

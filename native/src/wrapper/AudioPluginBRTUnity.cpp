@@ -167,7 +167,7 @@ void BRTSetSourceDirectivityEnabled (const char* soundSourceID, bool enabled)
     BRT_Log (2, "BRT Error: No spatializer instance found");
 }
 
-bool BRTSpatializerCreateSoundSource (const char* sourceId)
+bool BRTCreateSoundSource (const char* sourceId)
 {
     auto sourceIDStr = std::string (sourceId);
     BRT_Log (0, "Creating sound source: " + sourceIDStr);
@@ -179,7 +179,7 @@ bool BRTSpatializerCreateSoundSource (const char* sourceId)
     return false;
 }
 
-bool BRTSpatializerConnectSoundSource (const char* soundSourceID, const char* listenerModelID)
+bool BRTConnectSoundSource (const char* soundSourceID, const char* listenerModelID)
 {
     BRT_Log (0, "Connecting sound source: " + std::string (soundSourceID));
     
@@ -207,5 +207,16 @@ bool BRTSpatializerConnectSoundSource (const char* soundSourceID, const char* li
 
     BRT_Log (2, "Error connecting sound source. No listener found");
     
+    return false;
+}
+
+void BRTReconnectAllSoundSources()
+{
+    BRT_Log (0, "Re-connecting sound sources");
+    
+    if (auto* brtInstance = BRTLibraryWrapper::instance())
+        brtInstance->reconnectAllSoundSources();
+    
+    BRT_Log (2, "Error reconnecting sound sources. No spatializer instance found");
     return false;
 }
