@@ -160,16 +160,16 @@ namespace BRT
             var listenerModelType =
                 (int)(_activeConfig?.listenerModels?[0].parameters.type 
                       ?? ListenerModelType.DirectHRTFConvolutionModel);
-            NativePluginWrapper.BRTSpatializerCreateListenerModel(listenerModelType, listener.modelID);
-            NativePluginWrapper.BRTSpatializerConnectListenerModel(
+            NativePluginWrapper.BRTCreateListenerModel(listenerModelType, listener.modelID);
+            NativePluginWrapper.BRTConnectListenerModel(
                 listener.listenerID,
                 listener.modelID);
 
             listenerModelType =
                 (int)(_activeConfig?.listenerEnvironmentModels?[0].parameters.type 
                       ?? ListenerModelType.DirectBRIRConvolutionModel);
-            NativePluginWrapper.BRTSpatializerCreateListenerModel(listenerModelType, env.modelID);
-            NativePluginWrapper.BRTSpatializerConnectListenerModel(
+            NativePluginWrapper.BRTCreateListenerModel(listenerModelType, env.modelID);
+            NativePluginWrapper.BRTConnectListenerModel(
                 env.listenerID,
                 env.modelID);
         }
