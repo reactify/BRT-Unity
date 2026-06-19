@@ -6,23 +6,26 @@
 namespace BRTUnity
 {
 
-ScopedManagerSetup::ScopedManagerSetup (BRTBase::CBRTManager& m)
-: manager (m)                             { manager.BeginSetup(); }
-ScopedManagerSetup::~ScopedManagerSetup() { manager.EndSetup(); }
-
-ScopedSuspendProcessing::ScopedSuspendProcessing (BRTLibraryWrapper& w)
-: wrapper (w)
-{ wrapper.suspendProcessing (true); }
-ScopedSuspendProcessing::~ScopedSuspendProcessing()
-{ wrapper.suspendProcessing (false); }
-
 //==============================================================================
 std::shared_ptr<BRTLibraryWrapper> BRTLibraryWrapper::brtInstance { nullptr };
 
-//==============================================================================
 std::shared_ptr<BRTLibraryWrapper> BRTLibraryWrapper::instance() noexcept
 {
     return std::atomic_load_explicit (&brtInstance, std::memory_order_acquire);
+}
+
+//==============================================================================
+BRTLibraryWrapper::ScopedSetup::ScopedSetup (BRTLibraryWrapper& w)
+  : wrapper(w)
+{
+    wrapper.setupCounter.fetch_add (1, std::memory_order_release);
+    wrapper.brtManager.BeginSetup();
+}
+
+BRTLibraryWrapper::ScopedSetup::~ScopedSetup()
+{
+    wrapper.brtManager.EndSetup();
+    wrapper.setupCounter.fetch_sub (1, std::memory_order_release);
 }
 
 //==============================================================================
@@ -78,15 +81,9 @@ bool BRTLibraryWrapper::isCompatible (int newSampleRate, int newBufferSize) cons
     return sampleRate == newSampleRate && bufferSize == newBufferSize;
 }
 
-//==============================================================================
-void BRTLibraryWrapper::suspendProcessing (bool shouldBeSuspended) noexcept
-{
-    suspended.store (shouldBeSuspended, std::memory_order_release);
-}
-
 bool BRTLibraryWrapper::isSuspended() const noexcept
 {
-    return suspended.load (std::memory_order_acquire);
+    return setupCounter.load (std::memory_order_acquire) > 0;
 }
 
 //==============================================================================
@@ -98,13 +95,28 @@ void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
         std::fill (outBuffer, outBuffer + length * outCh, 0.0f);
         return;
     }
+    
+    for (auto& [id, s] : spatializers)
+    {
+        if (! s.dirty)
+            continue;
+
+        auto source = brtManager.GetSoundSource (std::to_string (id));
+        if (! source)
+            continue;
+
+        source->SetSourceTransform (s.sourceTransform);
+        source->SetBuffer (s.buffer);
+
+        s.dirty = false;
+    }
 
     brtManager.ProcessAll();
 
-    if (listener != nullptr)
+    auto localListener = getListener();
+    if (localListener != nullptr)
     {
-        BRT_Log(0, "Process listener");
-        listener->GetBuffers (outLeftBuffer, outRightBuffer);
+        localListener->GetBuffers (outLeftBuffer, outRightBuffer);
     }
 
     for (size_t i = 0; i < length; ++i)
@@ -117,12 +129,11 @@ void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
 //==============================================================================
 bool BRTLibraryWrapper::createListener (const char* listenerID)
 {
-    const ScopedSuspendProcessing guard (*this);
-    const ScopedManagerSetup managerSetup (brtManager);
+    const ScopedSetup guard (*this);
     
-    if (auto listener = brtManager.CreateListener<BRTBase::CListener> (listenerID))
+    if (auto newListener = brtManager.CreateListener<BRTBase::CListener> (listenerID))
     {
-        this->listener = listener;
+        std::atomic_store_explicit (&listener, newListener, std::memory_order_release);
         return true;
     }
     
@@ -131,29 +142,26 @@ bool BRTLibraryWrapper::createListener (const char* listenerID)
 
 bool BRTLibraryWrapper::removeListener (const char* listenerID)
 {
-    const ScopedSuspendProcessing guard (*this);
-    const ScopedManagerSetup managerSetup (brtManager);
+    const ScopedSetup guard (*this);
     
     auto success = brtManager.RemoveListener (listenerID);
     
     if (brtManager.GetListenerIDs().size() == 0)
-        this->listener = nullptr;
+        std::atomic_store_explicit (&listener, std::shared_ptr<BRTBase::CListener>{}, std::memory_order_release);
     
     return success;
 }
 
 bool BRTLibraryWrapper::removeListenerModel (const char* listenerModelID)
 {
-    const ScopedSuspendProcessing guard (*this);
-    const ScopedManagerSetup managerSetup (brtManager);
+    const ScopedSetup guard (*this);
     
     return brtManager.RemoveListenerModel (listenerModelID);
 }
 
 bool BRTLibraryWrapper::connectListenerModel (const char* listenerModelID, const char* listenerID)
 {
-    const ScopedSuspendProcessing guard (*this);
-    const ScopedManagerSetup sm (brtManager);
+    const ScopedSetup guard (*this);
     
     if (auto listener = brtManager.GetListener (listenerID))
     {
@@ -175,8 +183,12 @@ bool BRTLibraryWrapper::connectListenerModel (const char* listenerModelID, const
 
 void BRTLibraryWrapper::clearGraph()
 {
-    const ScopedSuspendProcessing guard (*this);
-    const ScopedManagerSetup sm (brtManager);
+    const ScopedSetup guard (*this);
+    
+    for (auto& [id, s] : spatializers)
+        if (auto source = brtManager.GetSoundSource (std::to_string (id)))
+            for (auto listenerModel : getListenerModels())
+                listenerModel->DisconnectSoundSource (std::to_string (id));
     
     for (auto listenerModelID : brtManager.GetListenerModelIDs())
         brtManager.RemoveListenerModel (listenerModelID);
@@ -189,8 +201,7 @@ void BRTLibraryWrapper::clearGraph()
 
 bool BRTLibraryWrapper::createSoundSource (const char* soundSourceId, bool autoConnect)
 {
-    const ScopedSuspendProcessing guard (*this);
-    const ScopedManagerSetup managerSetup (brtManager);
+    const ScopedSetup guard (*this);
     
     if (auto soundSource = brtManager.CreateSoundSource<BRTSourceModel::CSourceDirectivityModel> (soundSourceId))
     {
@@ -206,8 +217,7 @@ bool BRTLibraryWrapper::createSoundSource (const char* soundSourceId, bool autoC
 
 bool BRTLibraryWrapper::removeSoundSource (const char* soundSourceId)
 {
-    const ScopedSuspendProcessing guard (*this);
-    const ScopedManagerSetup managerSetup (brtManager);
+    const ScopedSetup guard (*this);
     
     for (const auto& listenerModel : getListenerModels())
         listenerModel->DisconnectSoundSource (soundSourceId);
@@ -215,14 +225,19 @@ bool BRTLibraryWrapper::removeSoundSource (const char* soundSourceId)
     return brtManager.RemoveSoundSource (soundSourceId);
 }
 
+bool BRTLibraryWrapper::connectSoundSource (const char *soundSourceID, const char *listenerModelID)
+{
+    const ScopedSetup guard (*this);
+    
+    if (auto listenerModel = brtManager.GetListenerModel<BRTListenerModel::CListenerModelBase> (listenerModelID))
+        return listenerModel->ConnectSoundSource (soundSourceID);
+    
+    BRT_Log (2, "Error connecting sound source " + std::string (soundSourceID) + " to listener model " + std::string (listenerModelID));
+    return false;
+}
+
 bool BRTLibraryWrapper::setHRTF (const char* hrtfFile)
 {
-    if (! listener)
-    {
-        BRT_Log (2, "Error setting HRTF. No listener found");
-        return false;
-    }
-    
     auto hrtf = std::make_shared<BRTServices::CSphericalInterpolatedFIRTable>();
     
     if (! AppUtils::LoadHRTFSofaFile (hrtfFile, hrtf))
@@ -231,17 +246,17 @@ bool BRTLibraryWrapper::setHRTF (const char* hrtfFile)
         return false;
     }
     
-    return listener->SetHRTF (hrtf);
+    const ScopedSetup guard (*this);
+
+    auto localListener = getListener();
+    if (! localListener)
+        return false;
+    
+    return localListener->SetHRTF (hrtf);
 }
 
 bool BRTLibraryWrapper::setNFCFilter (const char* nfcFilterFile)
 {
-    if (! listener)
-    {
-        BRT_Log (2, "Error setting NFC. No listener found");
-        return false;
-    }
-    
     auto sosFilter = std::make_shared<BRTServices::CSphericalSOSTable>();
     
     if (! AppUtils::LoadNearFieldSOSFilter (nfcFilterFile, sosFilter))
@@ -250,19 +265,17 @@ bool BRTLibraryWrapper::setNFCFilter (const char* nfcFilterFile)
         return false;
     }
     
-    return listener->SetNearFieldCompensationFilters (sosFilter);
+    const ScopedSetup guard (*this);
+
+    auto localListener = getListener();
+    if (! localListener)
+        return false;
+    
+    return localListener->SetNearFieldCompensationFilters (sosFilter);
 }
 
 bool BRTLibraryWrapper::setBRIR (const char* brirFile)
 {
-    BRT_Log (0, "[BRTLIbraryWrapper] Setting BRIR");
-    
-    if (! listener)
-    {
-        BRT_Log (2, "Error setting BRIR. No listener found");
-        return false;
-    }
-    
     auto brir = std::make_shared<BRTServices::CSphericalFIRTable>();
     
     if (! AppUtils::LoadBRIRSofaFile (brirFile, brir, 0, 0, 0, 0))
@@ -271,8 +284,13 @@ bool BRTLibraryWrapper::setBRIR (const char* brirFile)
         return false;
     }
     
-    BRT_Log (0, "[BRTLIbraryWrapper] Setting BRIR on listener");
-    return listener->SetHRBRIR (brir);
+    const ScopedSetup guard (*this);
+    
+    auto localListener = getListener();
+    if (! localListener)
+        return false;
+    
+    return localListener->SetHRBRIR (brir);
 }
 
 bool BRTLibraryWrapper::setDirectivityTF (const char* soundSourceID, const char* directivityFile)
@@ -357,6 +375,11 @@ void BRTLibraryWrapper::applyListenerModelParameters (const char* modelId,
                         &CListenerModelBase::DisableDistanceAttenuation);
         }
     }
+}
+
+std::shared_ptr<BRTBase::CListener> BRTLibraryWrapper::getListener() const noexcept
+{
+    return std::atomic_load_explicit (&listener, std::memory_order_acquire);
 }
 
 std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> BRTLibraryWrapper::getListenerModels()

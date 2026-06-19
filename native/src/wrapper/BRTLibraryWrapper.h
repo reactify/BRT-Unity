@@ -24,35 +24,28 @@ private:
 };
 
 
-class BRTLibraryWrapper;
-
-class ScopedManagerSetup
+struct SpatializerState
 {
-public:
-    explicit ScopedManagerSetup (BRTBase::CBRTManager& m);
-    ~ScopedManagerSetup();
-    ScopedManagerSetup (const ScopedManagerSetup&) = delete;
-    ScopedManagerSetup& operator=(const ScopedManagerSetup&) = delete;
-private:
-    BRTBase::CBRTManager& manager;
+    CMonoBuffer<float> buffer;
+    Common::CTransform sourceTransform;
+    Common::CTransform listenerTransform;
+    bool dirty = false;
 };
 
-// Scoped guard class to automatically turn processing on/off
-class ScopedSuspendProcessing
-{
-public:
-    explicit ScopedSuspendProcessing (BRTLibraryWrapper& w);
-    ~ScopedSuspendProcessing();
-    ScopedSuspendProcessing (const ScopedSuspendProcessing&) = delete;
-    ScopedSuspendProcessing& operator=(const ScopedSuspendProcessing&) = delete;
-private:
-    BRTLibraryWrapper& wrapper;
-};
-
+// class BRTLibraryWrapper;
 
 //==============================================================================
 class BRTLibraryWrapper
 {
+    class ScopedSetup
+    {
+    public:
+        explicit ScopedSetup (BRTLibraryWrapper& w);
+        ~ScopedSetup();
+    private:
+        BRTLibraryWrapper& wrapper;
+    };
+    
 public:
     // Audio-thread safe accessor
     static std::shared_ptr<BRTLibraryWrapper> instance() noexcept;
@@ -62,16 +55,19 @@ public:
     static void destroy();
 
     bool isCompatible (int sampleRate, int bufferSize) const noexcept;
-    
-    void suspendProcessing (bool shouldBeSuspended) noexcept;
-    
-    bool isSuspended() const noexcept;
 
     void process (float* in, float* out, unsigned int len, int inCh, int outCh) noexcept;
     
     //==========================================================================
     bool createListener (const char* listenerID);
     bool removeListener (const char* listenerID);
+    
+    void registerSpatializer (int id)
+    {
+        auto& state = spatializers[id];
+        state.dirty = false;
+    }
+    void unregisterSpatializer (int id) { spatializers.erase(id); }
     
     template <typename ListenerModelType>
     bool createListenerModel (const char* listenerModelID);
@@ -81,16 +77,16 @@ public:
     void clearGraph();
     
     //==========================================================================
-    bool createSoundSource (const char* soundSourceId, bool autoConnect = true);
-    bool removeSoundSource (const char* soundSourceId);
-    
+    bool createSoundSource (const char* soundSourceID, bool autoConnect = true);
+    bool removeSoundSource (const char* soundSourceID);
+    bool connectSoundSource (const char* soundSourceID, const char* listenerModelID);
     void reconnectAllSoundSources()
     {
-        GlobalIdPool::instance().for_each_active ([&] (int id)
+        for (auto& [id, s] : spatializers)
         {
             for (auto model : getListenerModels())
                 model->ConnectSoundSource (std::to_string (id));
-        });
+        };
     }
     
     //==========================================================================
@@ -105,28 +101,32 @@ public:
     {
         applyListenerModelParameters (modelId, p);
     }
+
+    std::unordered_map<int, SpatializerState> spatializers;
     
-    BRTBase::CBRTManager brtManager;
-    std::shared_ptr<BRTBase::CListener> listener;
+protected:
+    std::atomic<uint32_t> setupCounter { 0 };
     
 private:
     //==========================================================================
     BRTLibraryWrapper (int sampleRate, int bufferSize);
     ~BRTLibraryWrapper();
     
+    bool isSuspended() const noexcept;
     void applyListenerModelParameters (const char* modelId, const ListenerModelParameters* p);
-    
+    std::shared_ptr<BRTBase::CListener> getListener() const noexcept;
     std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> getListenerModels();
 
     // Shared instance
     static std::shared_ptr<BRTLibraryWrapper> brtInstance;
     
+    BRTBase::CBRTManager brtManager;
+    std::shared_ptr<BRTBase::CListener> listener;
     Common::CGlobalParameters globalParameters;
     
     int sampleRate, bufferSize;
     CMonoBuffer<float> outLeftBuffer;
     CMonoBuffer<float> outRightBuffer;
-    std::atomic<bool> suspended;
 };
 
 
@@ -134,8 +134,7 @@ private:
 template <typename ListenerModelType>
 inline bool BRTLibraryWrapper::createListenerModel (const char* listenerModelId)
 {
-    const ScopedSuspendProcessing guard (*this);
-    const ScopedManagerSetup managerSetup (brtManager);
+    const ScopedSetup guard (*this);
     
     if (auto listenerModel = brtManager.CreateListenerModel<ListenerModelType> (listenerModelId))
         return true;

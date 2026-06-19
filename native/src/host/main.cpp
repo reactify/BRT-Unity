@@ -42,14 +42,14 @@ int main()
     
     auto brtInstance = BRTUnity::BRTLibraryWrapper::instance();
     
-    auto soundSource = brtInstance->brtManager.GetSoundSource ("Source_0");
-    
-    // Transform input buffer
-    for (size_t i = 0; i < length; i++)
-        inMonoBuffer[i] = (inbuffer[i * 2] + inbuffer[i * 2 + 1]) / 2.0f;
-
-    if (soundSource)
-        soundSource->SetBuffer (inMonoBuffer);
+//    auto soundSource = brtInstance->brtManager.GetSoundSource ("Source_0");
+//    
+//    // Transform input buffer
+//    for (size_t i = 0; i < length; i++)
+//        inMonoBuffer[i] = (inbuffer[i * 2] + inbuffer[i * 2 + 1]) / 2.0f;
+//
+//    if (soundSource)
+//        soundSource->SetBuffer (inMonoBuffer);
     
     brtInstance->process (inbuffer, outbuffer, length, inchannels, outchannels);
 

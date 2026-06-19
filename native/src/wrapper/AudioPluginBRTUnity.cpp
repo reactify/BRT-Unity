@@ -182,30 +182,10 @@ bool BRTConnectSoundSource (const char* soundSourceID, const char* listenerModel
 {
     BRT_Log (0, "Connecting sound source: " + std::string (soundSourceID));
     
-    auto brtInstance = BRTLibraryWrapper::instance();
+    if (auto brt = BRTLibraryWrapper::instance())
+        return brt->connectSoundSource (soundSourceID, listenerModelID);
     
-    if (brtInstance == nullptr)
-    {
-        BRT_Log (2, "[BRTConnectSoundSource] No BRTLibrary instance found");
-        return false;
-    }
-    
-    if (brtInstance->listener)
-    {
-        BRT_Log (0, "Listener exists. Finding listener model: " + std::string (listenerModelID));
-     
-        auto& brtManager = brtInstance->brtManager;
-        
-        const ScopedManagerSetup sm (brtManager);
-        
-        if (auto listenerModel = brtManager.GetListenerModel<BRTListenerModel::CListenerModelBase> (listenerModelID))
-        {
-            return listenerModel->ConnectSoundSource (soundSourceID);
-        }
-    }
-
-    BRT_Log (2, "[BRTConnectSoundSource] Error connecting sound source. No listener found");
-    
+    BRT_Log (2, "[BRTConnectSoundSource] No BRTLibrary instance found");
     return false;
 }
 
