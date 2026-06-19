@@ -26,10 +26,13 @@ namespace BRT
         public static extern bool BRTRemoveListener(string listenerId);
 
         [DllImport(DLL_NAME)]
-        public static extern bool BRTSpatializerCreateListenerModel(int type, string modelName);
+        public static extern bool BRTCreateListenerModel(int type, string modelName);
 
         [DllImport(DLL_NAME)]
-        public static extern bool BRTSpatializerConnectListenerModel(string listenerId, string listenerModelId);
+        public static extern bool BRTConnectListenerModel(string listenerId, string listenerModelId);
+
+        [DllImport(DLL_NAME)]
+        public static extern void BRTClearGraph();
         
         [DllImport(DLL_NAME)]
         public static extern void BRTSetListenerModelParameters(string listenerModelId, ref ListenerModelParameters parameters);
