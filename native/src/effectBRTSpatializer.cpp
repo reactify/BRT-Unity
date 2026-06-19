@@ -6,6 +6,7 @@
 #include "AudioPluginUtil.h"
 #include "AppUtils.h"
 #include "Logging.h"
+#include "SpatializerRegistry.h"
 
 // DEBUG LOG 
 #ifdef UNITY_ANDROID
@@ -87,7 +88,7 @@ CreateCallback (UnityAudioEffectState* state)
 
     int instanceId = GlobalIdPool::instance().acquire();
 
-    brt->registerSpatializer (instanceId);
+    SpatializerRegistry::instance().set (instanceId, {});
     brt->createSoundSource (std::to_string(instanceId).c_str());
     BRT_Log (0, "[effectBRTSpatializer] Created Spatializer Source " + std::to_string (instanceId));
 
@@ -110,8 +111,8 @@ ReleaseCallback (UnityAudioEffectState* state)
 
         if (brt)
         {
-            brt->unregisterSpatializer (data->sourceID);
-            brt->removeSoundSource (std::to_string(data->sourceID).c_str());
+            SpatializerRegistry::instance().erase (data->sourceID);
+            brt->removeSoundSource (std::to_string (data->sourceID).c_str());
         }
 
         GlobalIdPool::instance().release (data->sourceID);
@@ -177,17 +178,15 @@ ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer
  
     auto* data = state->GetEffectData<EffectData>();
 
-    auto& st = brt->spatializers[data->sourceID];
-
-    st.sourceTransform =
-        ComputeSourceTransformFromMatrix(state->spatializerdata->sourcematrix,
-                                         data->scaleFactor);
-
     for (size_t i = 0; i < length; ++i)
         data->inMonoBuffer[i] = (inbuffer[i * 2] + inbuffer[i * 2 + 1]) * 0.5f;
-
-    st.buffer = data->inMonoBuffer;
-    st.dirty = true;
+    
+    SpatializerState s;
+    s.sourceTransform = ComputeSourceTransformFromMatrix (state->spatializerdata->sourcematrix, data->scaleFactor);
+    s.buffer = data->inMonoBuffer;
+    SpatializerRegistry::instance().set (data->sourceID, std::move (s));
+    
+    brt->setListenerTransform (ComputeListenerTransformFromMatrix (state->spatializerdata->listenermatrix, data->scaleFactor));
 
     for (size_t i = 0; i < (size_t) length * std::max (inchannels, outchannels); ++i)
         outbuffer[i] = 0.0f;

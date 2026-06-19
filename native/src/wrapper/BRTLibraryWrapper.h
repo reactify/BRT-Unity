@@ -6,7 +6,7 @@
 #include <cfloat>
 #include "BRTLibrary.h"
 #include "Parameters.h"
-#include "VersionedParameters.h"
+#include "SpatializerRegistry.h"
 #include "IdPool.h"
 
 namespace BRTUnity
@@ -22,17 +22,6 @@ public:
 private:
     GlobalIdPool() = default;
 };
-
-
-struct SpatializerState
-{
-    CMonoBuffer<float> buffer;
-    Common::CTransform sourceTransform;
-    Common::CTransform listenerTransform;
-    bool dirty = false;
-};
-
-// class BRTLibraryWrapper;
 
 //==============================================================================
 class BRTLibraryWrapper
@@ -62,13 +51,6 @@ public:
     bool createListener (const char* listenerID);
     bool removeListener (const char* listenerID);
     
-    void registerSpatializer (int id)
-    {
-        auto& state = spatializers[id];
-        state.dirty = false;
-    }
-    void unregisterSpatializer (int id) { spatializers.erase(id); }
-    
     template <typename ListenerModelType>
     bool createListenerModel (const char* listenerModelID);
     bool removeListenerModel (const char* listenerModelID);
@@ -82,7 +64,9 @@ public:
     bool connectSoundSource (const char* soundSourceID, const char* listenerModelID);
     void reconnectAllSoundSources()
     {
-        for (auto& [id, s] : spatializers)
+        auto snapshot = SpatializerRegistry::instance().get();
+
+        for (const auto& [id, state] : *snapshot)
         {
             for (auto model : getListenerModels())
                 model->ConnectSoundSource (std::to_string (id));
@@ -101,8 +85,12 @@ public:
     {
         applyListenerModelParameters (modelId, p);
     }
-
-    std::unordered_map<int, SpatializerState> spatializers;
+    
+    void setListenerTransform (Common::CTransform newTransform)
+    {
+        if (auto listener = getListener())
+            listener->SetListenerTransform (newTransform);
+    }
     
 protected:
     std::atomic<uint32_t> setupCounter { 0 };

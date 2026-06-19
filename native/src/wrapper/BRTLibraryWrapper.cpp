@@ -96,19 +96,16 @@ void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
         return;
     }
     
-    for (auto& [id, s] : spatializers)
-    {
-        if (! s.dirty)
-            continue;
+    auto snapshot = SpatializerRegistry::instance().get();
 
+    for (const auto& [id, s] : *snapshot)
+    {
         auto source = brtManager.GetSoundSource (std::to_string (id));
         if (! source)
             continue;
 
         source->SetSourceTransform (s.sourceTransform);
         source->SetBuffer (s.buffer);
-
-        s.dirty = false;
     }
 
     brtManager.ProcessAll();
@@ -185,7 +182,9 @@ void BRTLibraryWrapper::clearGraph()
 {
     const ScopedSetup guard (*this);
     
-    for (auto& [id, s] : spatializers)
+    auto snapshot = SpatializerRegistry::instance().get();
+
+    for (const auto& [id, s] : *snapshot)
         if (auto source = brtManager.GetSoundSource (std::to_string (id)))
             for (auto listenerModel : getListenerModels())
                 listenerModel->DisconnectSoundSource (std::to_string (id));

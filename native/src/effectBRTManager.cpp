@@ -21,6 +21,7 @@ namespace BRTManager
 	struct EffectData
 	{
 		std::array<float, NumParameters> parameters;
+        float scaleFactor = 1.0f;
 	};
 
     //==========================================================================
@@ -105,7 +106,7 @@ namespace BRTManager
             memcpy (outbuffer, inbuffer, length * outchannels * sizeof (float));
             return UNITY_AUDIODSP_OK;
         }
-
+        
         brt->process (inbuffer, outbuffer, length, inchannels, outchannels);
 
 		return UNITY_AUDIODSP_OK;
