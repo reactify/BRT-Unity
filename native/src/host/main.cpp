@@ -20,12 +20,24 @@ int main()
     BRTCreateListener ("Listener_0");
     BRTCreateListenerModel (0, "Direct_Path");
     BRTConnectListenerModel ("Listener_0", "Direct_Path");
-    BRTCreateListenerModel (1, "Reverb_Path");
+    BRTCreateListenerModel (3, "Reverb_Path");
     BRTConnectListenerModel ("Listener_0", "Reverb_Path");
-    BRTCreateSoundSource ("Source_0");
-    BRTLoadSourceDirectivityTF ("Source_0", "/Users/ragnaringi/Desktop/Cardioid_LP_30dB_512s_resampled10_normalized_fir_512.sofa");
-    BRTSetSourceDirectivityEnabled ("Source_0", true);
+    // BRTCreateSoundSource ("Source_0");
     
+    int instanceId = BRTUnity::GlobalIdPool::instance().acquire();
+    SpatializerRegistry::instance().set (instanceId, {});
+    BRTCreateSoundSource (std::to_string(instanceId).c_str());
+    
+    // BRTLoadSourceDirectivityTF ("Source_0", "/Users/ragnaringi/Desktop/Cardioid_LP_30dB_512s_resampled10_normalized_fir_512.sofa");
+    // BRTSetSourceDirectivityEnabled ("Source_0", true);
+    BRTClearGraph();
+    BRTCreateListener ("Listener_0");
+    BRTCreateListenerModel (0, "Direct_Path");
+    BRTConnectListenerModel ("Listener_0", "Direct_Path");
+    BRTCreateListenerModel (3, "Reverb_Path");
+    BRTConnectListenerModel ("Listener_0", "Reverb_Path");
+    
+    BRTReconnectAllSoundSources();
     BRTClearGraph();
     BRTSpatializerDestroy();
     BRTSpatializerResetIfNeeded (44100, length);

@@ -95,7 +95,8 @@ namespace BRT
                     AudioSettings.outputSampleRate,
                     _dspBufferSize
                 );
-
+                
+                NativePluginWrapper.BRTClearGraph();
                 _listenerCreated = false;
             }
 
@@ -147,6 +148,8 @@ namespace BRT
             
             NativePluginWrapper.BRTSetListenerModelParameters(listener.modelID, ref listener.parameters);
             NativePluginWrapper.BRTSetListenerModelParameters(env.modelID, ref env.parameters);
+
+            NativePluginWrapper.BRTReconnectAllSoundSources();
         }
 
         // --------------------------------------------------------------------

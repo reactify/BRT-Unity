@@ -119,7 +119,7 @@ namespace BRT.Editor
                 {
                     _sourcePreset = _presets[_selectedIndex];
 
-                    BRTSystem.SetConfig(_sourcePreset);
+                    BRTSystem.SetConfig(_sourcePreset, true);
 
                     SyncToActiveConfig();
                 }

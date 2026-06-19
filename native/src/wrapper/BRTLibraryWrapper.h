@@ -64,12 +64,18 @@ public:
     bool connectSoundSource (const char* soundSourceID, const char* listenerModelID);
     void reconnectAllSoundSources()
     {
+        const ScopedSetup guard (*this);
+        
         auto snapshot = SpatializerRegistry::instance().get();
 
         for (const auto& [id, state] : *snapshot)
         {
             for (auto model : getListenerModels())
-                model->ConnectSoundSource (std::to_string (id));
+            {
+                auto idString = std::to_string (id);
+                model->DisconnectSoundSource (idString);
+                model->ConnectSoundSource (idString);
+            }
         };
     }
     
