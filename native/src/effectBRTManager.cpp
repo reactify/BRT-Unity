@@ -97,7 +97,7 @@ namespace BRTManager
     ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer,
                      unsigned int length, int inchannels, int outchannels)
 	{
-        auto* brtInstance = BRTLibraryWrapper::instance();
+        auto brtInstance = BRTLibraryWrapper::instance();
 
         if (inchannels != 2 || outchannels != 2 ||
           ! brtInstance || ! brtInstance->isCompatible (state->samplerate, state->dspbuffersize))

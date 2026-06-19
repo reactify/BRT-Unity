@@ -17,14 +17,12 @@ ScopedSuspendProcessing::~ScopedSuspendProcessing()
 { wrapper.suspendProcessing (false); }
 
 //==============================================================================
-std::atomic<BRTLibraryWrapper*> BRTLibraryWrapper::brtInstance = nullptr;
-std::mutex BRTLibraryWrapper::retireMutex;
-std::vector<BRTLibraryWrapper::RetiredItem> BRTLibraryWrapper::retired;
+std::shared_ptr<BRTLibraryWrapper> BRTLibraryWrapper::brtInstance { nullptr };
 
 //==============================================================================
-BRTLibraryWrapper* BRTLibraryWrapper::instance() noexcept
+std::shared_ptr<BRTLibraryWrapper> BRTLibraryWrapper::instance() noexcept
 {
-    return brtInstance.load (std::memory_order_acquire);
+    return std::atomic_load_explicit (&brtInstance, std::memory_order_acquire);
 }
 
 //==============================================================================
@@ -50,59 +48,28 @@ BRTLibraryWrapper::~BRTLibraryWrapper()
 //==============================================================================
 void BRTLibraryWrapper::initOrReplace (int sampleRate, int bufferSize)
 {
-    auto* current = brtInstance.load (std::memory_order_acquire);
+    auto current = std::atomic_load_explicit(&brtInstance, std::memory_order_acquire);
 
     if (current && current->isCompatible (sampleRate, bufferSize))
         return;
 
     BRT_Log (0, "[BRTLibraryWrapper] Creating new instance");
-    
-    auto* newInstance = new BRTLibraryWrapper (sampleRate, bufferSize);
-
-    auto* old = brtInstance.exchange (newInstance, std::memory_order_acq_rel);
-
-    if (old)
-    {
-        old->suspendProcessing (true);
-
-        std::lock_guard<std::mutex> lock (retireMutex);
-        retired.push_back({ old, 2 });
-    }
+    auto newInstance = std::shared_ptr<BRTLibraryWrapper>
+    (
+        new BRTLibraryWrapper (sampleRate, bufferSize),
+        [] (BRTLibraryWrapper* p)
+        {
+            delete p;
+        }
+    );
+    std::atomic_store_explicit (&brtInstance, newInstance, std::memory_order_release);
 }
 
 //==============================================================================
 void BRTLibraryWrapper::destroy()
 {
     BRT_Log (0, "[BRTLibraryWrapper] Destroying old instance");
-    
-    auto* old = brtInstance.exchange (nullptr, std::memory_order_acq_rel);
-
-    if (old)
-    {
-        old->suspendProcessing (true);
-
-        std::lock_guard<std::mutex> lock (retireMutex);
-        retired.push_back ({ old, 2 });
-    }
-}
-
-//==============================================================================
-void BRTLibraryWrapper::cleanup()
-{
-    std::lock_guard<std::mutex> lock (retireMutex);
-
-    for (auto it = retired.begin(); it != retired.end(); )
-    {
-        if (--it->framesLeft <= 0)
-        {
-            delete it->ptr;
-            it = retired.erase (it);
-        }
-        else
-        {
-            ++it;
-        }
-    }
+    std::atomic_store_explicit (&brtInstance, std::shared_ptr<BRTLibraryWrapper>{}, std::memory_order_release);
 }
 
 //==============================================================================
@@ -134,8 +101,11 @@ void BRTLibraryWrapper::process (float* inBuffer, float* outBuffer,
 
     brtManager.ProcessAll();
 
-    if (listener)
+    if (listener != nullptr)
+    {
+        BRT_Log(0, "Process listener");
         listener->GetBuffers (outLeftBuffer, outRightBuffer);
+    }
 
     for (size_t i = 0; i < length; ++i)
     {
@@ -208,11 +178,11 @@ void BRTLibraryWrapper::clearGraph()
     const ScopedSuspendProcessing guard (*this);
     const ScopedManagerSetup sm (brtManager);
     
-    for (auto listenerID : brtManager.GetListenerIDs())
-        brtManager.RemoveListener (listenerID);
-    
     for (auto listenerModelID : brtManager.GetListenerModelIDs())
         brtManager.RemoveListenerModel (listenerModelID);
+    
+    for (auto listenerID : brtManager.GetListenerIDs())
+        brtManager.RemoveListener (listenerID);
     
     listener = nullptr;
 }

@@ -22,10 +22,10 @@ bool BRTCreateListener (const char* listenerID)
 {
     BRT_Log (0, "Creating Listener: " +  std::string (listenerID));
     
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
+    if (auto brtInstance = BRTLibraryWrapper::instance())
         return brtInstance->createListener (listenerID);
     
-    BRT_Log (2, "[BRTCreateListener]: No Spatializer exists");
+    BRT_Log (2, "[BRTCreateListener]: No BRTLibrary instance found");
     return false;
 }
 
@@ -33,10 +33,10 @@ bool BRTRemoveListener (const char* listenerID)
 {
     BRT_Log (0, "Removing Listener: " +  std::string (listenerID));
     
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
+    if (auto brtInstance = BRTLibraryWrapper::instance())
         return brtInstance->removeListener (listenerID);
     
-    BRT_Log (2, "[BRTRemoveListener]: No Spatializer exists");
+    BRT_Log (2, "[BRTRemoveListener]: No BRTLibrary instance found");
     return false;
 }
 
@@ -44,11 +44,11 @@ bool BRTCreateListenerModel (int type, const char* listenerModelId)
 {
     BRT_Log (0, "Creating Listener Model: " +  std::string (listenerModelId) + " of type: " + std::to_string (type));
     
-    auto* brtInstance = BRTLibraryWrapper::instance();
+    auto brtInstance = BRTLibraryWrapper::instance();
     
     if (brtInstance == nullptr)
     {
-        BRT_Log (2, "[BRTSpatializerCreateListener]: No Spatializer exists");
+        BRT_Log (2, "[BRTSpatializerCreateListener] No BRTLibrary instance found");
         return false;
     }
     
@@ -73,10 +73,10 @@ bool BRTRemoveListenerModel (const char* listenerModelID)
 {
     BRT_Log (0, "Removing Listener Model: " +  std::string (listenerModelID));
     
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
+    if (auto brtInstance = BRTLibraryWrapper::instance())
         return brtInstance->removeListenerModel (listenerModelID);
     
-    BRT_Log (2, "BRT Error: No spatializer instance found");
+    BRT_Log (2, "[BRTRemoveListenerModel] No BRTLibrary instance found");
     return false;
 }
 
@@ -84,10 +84,10 @@ bool BRTConnectListenerModel (const char* listenerId, const char* listenerModelI
 {
     BRT_Log (0, "Connecting Listener Model: " +  std::string (listenerModelId) + " to listener: " + std::string (listenerId));
     
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
+    if (auto brtInstance = BRTLibraryWrapper::instance())
         return brtInstance->connectListenerModel (listenerModelId, listenerId);
     
-    BRT_Log (2, "BRT Error: No spatializer instance found");
+    BRT_Log (2, "[BRTConnectListenerModel] No BRTLibrary instance found");
     return false;
 }
 
@@ -95,10 +95,10 @@ void BRTClearGraph()
 {
     BRT_Log (0, "BRTClearGraph");
     
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
-        brtInstance->clearGraph();
+    if (auto brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->clearGraph();
     
-    BRT_Log (2, "BRT Error: No spatializer instance found");
+    BRT_Log (2, "[BRTClearGraph] No BRTLibrary instance found");
     return false;
 }
 
@@ -106,21 +106,20 @@ void BRTSetListenerModelParameters (const char* listenerModelId, const BRTUnity:
 {
     BRT_Log (0, "BRTSetListenerModelParameters");
     
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
-        brtInstance->updateListenerModelParameters (listenerModelId, params);
+    if (auto brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->updateListenerModelParameters (listenerModelId, params);
     
-    BRT_Log (2, "BRT Error: No spatializer instance found");
-    return false;
+    BRT_Log (2, "[BRTSetListenerModelParameters] No BRTLibrary instance found");
 }
 
 bool BRTSpatializerLoadHRTF (const char* hrtfFile) // TODO: return index?
 {
     BRT_Log (0, "Loading HRTF " +  std::string (hrtfFile));
     
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
+    if (auto brtInstance = BRTLibraryWrapper::instance())
         return brtInstance->setHRTF (hrtfFile);
     
-    BRT_Log (2, "BRT Error: No spatializer instance found");
+    BRT_Log (2, "[BRTSpatializerLoadHRTF] No BRTLibrary instance found");
     return false;
 }
 
@@ -128,10 +127,10 @@ bool BRTSpatializerLoadNearFieldCompensationFilter (const char* nfcFilterFile)
 {
     BRT_Log (0, "Loading NFC Filter " +  std::string (nfcFilterFile));
     
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
+    if (auto brtInstance = BRTLibraryWrapper::instance())
         return brtInstance->setNFCFilter (nfcFilterFile);
     
-    BRT_Log (2, "BRT Error: No spatializer instance found");
+    BRT_Log (2, "[BRTSpatializerLoadNearFieldCompensationFilter] No BRTLibrary instance found");
     return false;
 }
 
@@ -139,10 +138,10 @@ bool BRTSpatializerLoadBRIR (const char* brirFile)
 {
     BRT_Log (0, "Loading BRIR " +  std::string (brirFile));
     
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
+    if (auto brtInstance = BRTLibraryWrapper::instance())
         return brtInstance->setBRIR (brirFile);
 
-    BRT_Log (2, "Error setting BRIR");
+    BRT_Log (2, "[BRTSpatializerLoadBRIR] No BRTLibrary instance found");
     return false;
 }
 
@@ -150,10 +149,10 @@ bool BRTLoadSourceDirectivityTF (const char* soundSourceID, const char* directiv
 {
     BRT_Log (0, "Loading DirectivityTF " +  std::string (directivityFile));
     
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
+    if (auto brtInstance = BRTLibraryWrapper::instance())
         return brtInstance->setDirectivityTF (soundSourceID, directivityFile);
     
-    BRT_Log (2, "BRT Error: No spatializer instance found");
+    BRT_Log (2, "[BRTLoadSourceDirectivityTF] No BRTLibrary instance found");
     return false;
 }
 
@@ -161,10 +160,10 @@ void BRTSetSourceDirectivityEnabled (const char* soundSourceID, bool enabled)
 {
     BRT_Log (0, "Setting Directivity enabled " +  std::string (enabled ? "true" : " false"));
     
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
+    if (auto brtInstance = BRTLibraryWrapper::instance())
         return brtInstance->setDirectivityEnabled (soundSourceID, enabled);
     
-    BRT_Log (2, "BRT Error: No spatializer instance found");
+    BRT_Log (2, "[BRTSetSourceDirectivityEnabled] No BRTLibrary instance found");
 }
 
 bool BRTCreateSoundSource (const char* sourceId)
@@ -172,10 +171,10 @@ bool BRTCreateSoundSource (const char* sourceId)
     auto sourceIDStr = std::string (sourceId);
     BRT_Log (0, "Creating sound source: " + sourceIDStr);
     
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
+    if (auto brtInstance = BRTLibraryWrapper::instance())
         return brtInstance->createSoundSource (sourceId);
     
-    BRT_Log (2, "BRT Error: No spatializer instance found");
+    BRT_Log (2, "[BRTCreateSoundSource] No BRTLibrary instance found");
     return false;
 }
 
@@ -183,11 +182,11 @@ bool BRTConnectSoundSource (const char* soundSourceID, const char* listenerModel
 {
     BRT_Log (0, "Connecting sound source: " + std::string (soundSourceID));
     
-    auto* brtInstance = BRTLibraryWrapper::instance();
+    auto brtInstance = BRTLibraryWrapper::instance();
     
     if (brtInstance == nullptr)
     {
-        BRT_Log (2, "No spatializer instance found");
+        BRT_Log (2, "[BRTConnectSoundSource] No BRTLibrary instance found");
         return false;
     }
     
@@ -205,7 +204,7 @@ bool BRTConnectSoundSource (const char* soundSourceID, const char* listenerModel
         }
     }
 
-    BRT_Log (2, "Error connecting sound source. No listener found");
+    BRT_Log (2, "[BRTConnectSoundSource] Error connecting sound source. No listener found");
     
     return false;
 }
@@ -214,9 +213,9 @@ void BRTReconnectAllSoundSources()
 {
     BRT_Log (0, "Re-connecting sound sources");
     
-    if (auto* brtInstance = BRTLibraryWrapper::instance())
-        brtInstance->reconnectAllSoundSources();
+    if (auto brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->reconnectAllSoundSources();
     
-    BRT_Log (2, "Error reconnecting sound sources. No spatializer instance found");
+    BRT_Log (2, "[BRTReconnectAllSoundSources] No BRTLibrary instance found");
     return false;
 }

@@ -55,12 +55,11 @@ class BRTLibraryWrapper
 {
 public:
     // Audio-thread safe accessor
-    static BRTLibraryWrapper* instance() noexcept;
+    static std::shared_ptr<BRTLibraryWrapper> instance() noexcept;
 
     // Main-thread init/replacement
     static void initOrReplace (int sampleRate, int bufferSize);
     static void destroy();
-    static void cleanup();
 
     bool isCompatible (int sampleRate, int bufferSize) const noexcept;
     
@@ -120,16 +119,7 @@ private:
     std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> getListenerModels();
 
     // Shared instance
-    static std::atomic<BRTLibraryWrapper*> brtInstance;
-    
-    struct RetiredItem
-    {
-        BRTLibraryWrapper* ptr;
-        int framesLeft;
-    };
-
-    static std::mutex retireMutex;
-    static std::vector<RetiredItem> retired;
+    static std::shared_ptr<BRTLibraryWrapper> brtInstance;
     
     Common::CGlobalParameters globalParameters;
     

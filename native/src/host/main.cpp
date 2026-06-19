@@ -40,7 +40,7 @@ int main()
     
     CMonoBuffer<float> inMonoBuffer (length);
     
-    auto* brtInstance = BRTUnity::BRTLibraryWrapper::instance();
+    auto brtInstance = BRTUnity::BRTLibraryWrapper::instance();
     
     auto soundSource = brtInstance->brtManager.GetSoundSource ("Source_0");
     

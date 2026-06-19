@@ -39,7 +39,7 @@ struct EffectData
     int sourceID;
     float scaleFactor = 1.0f;
     CMonoBuffer<float> inMonoBuffer;
-    std::weak_ptr<BRTSourceModel::CSourceModelBase> soundSource;
+    std::shared_ptr<BRTSourceModel::CSourceModelBase> soundSource;
 };
 
 enum Parameter
@@ -84,7 +84,7 @@ CreateCallback (UnityAudioEffectState* state)
 {
     BRTLibraryWrapper::initOrReplace (state->samplerate, state->dspbuffersize);
     
-    auto* brtInstance = BRTLibraryWrapper::instance();
+    auto brtInstance = BRTLibraryWrapper::instance();
     
     auto instanceId = GlobalIdPool::instance().acquire();
     BRT_Log (0, "[effectBRTSpatializer] ID Generated " + std::to_string (instanceId));
@@ -110,7 +110,7 @@ ReleaseCallback (UnityAudioEffectState* state)
     {
         GlobalIdPool::instance().release (data->sourceID);
         
-        if (auto* brtInstance = BRTLibraryWrapper::instance())
+        if (auto brtInstance = BRTLibraryWrapper::instance())
         {
             BRT_Log (0, "[effectBRTSpatializer] Removing Spatializer Source");
             brtInstance->removeSoundSource (std::to_string (data->sourceID).c_str());
@@ -165,10 +165,11 @@ UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK
 ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer,
                  unsigned int length, int inchannels, int outchannels)
 {
-    auto* brtInstance = BRTLibraryWrapper::instance();
+    auto brtInstance = BRTLibraryWrapper::instance();
 
     if (inchannels != 2 || outchannels != 2 ||
-      ! brtInstance || ! brtInstance->isCompatible (state->samplerate, state->dspbuffersize))
+      ! brtInstance || ! brtInstance->isCompatible (state->samplerate, state->dspbuffersize) ||
+        brtInstance->isSuspended())
     {
         memcpy (outbuffer, inbuffer, length * outchannels * sizeof (float));
         return UNITY_AUDIODSP_OK;
@@ -177,7 +178,7 @@ ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer
     EffectData* data = state->GetEffectData<EffectData>();
     
 	// Set source and listener transform
-    if (auto soundSource = data->soundSource.lock())
+    if (auto soundSource = data->soundSource)
     {
         auto transform = ComputeSourceTransformFromMatrix (state->spatializerdata->sourcematrix, data->scaleFactor);
         soundSource->SetSourceTransform (transform);
@@ -190,7 +191,7 @@ ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer
 	for (size_t i = 0; i < length; i++)
 		data->inMonoBuffer[i] = (inbuffer[i * 2] + inbuffer[i * 2 + 1]) / 2.0f;	// Average of left and right channels
 
-    if (auto soundSource = data->soundSource.lock())
+    if (auto soundSource = data->soundSource)
         soundSource->SetBuffer (data->inMonoBuffer);
 
     for (size_t i = 0; i < (size_t) length * std::max (inchannels, outchannels); ++i)
