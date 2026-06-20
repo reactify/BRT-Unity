@@ -19,9 +19,9 @@ int main()
     BRTSpatializerResetIfNeeded (44100, length);
     BRTCreateListener ("Listener_0");
     BRTCreateListenerModel (0, "Direct_Path");
-    BRTConnectListenerModel ("Listener_0", "Direct_Path");
+    BRTConnectListenerModel ("Direct_Path", "Listener_0");
     BRTCreateListenerModel (3, "Reverb_Path");
-    BRTConnectListenerModel ("Listener_0", "Reverb_Path");
+    BRTConnectListenerModel ("Reverb_Path", "Listener_0");
     // BRTCreateSoundSource ("Source_0");
     
     int instanceId = BRTUnity::GlobalIdPool::instance().acquire();
@@ -33,11 +33,24 @@ int main()
     BRTClearGraph();
     BRTCreateListener ("Listener_0");
     BRTCreateListenerModel (0, "Direct_Path");
-    BRTConnectListenerModel ("Listener_0", "Direct_Path");
+    BRTConnectListenerModel ("Direct_Path", "Listener_0");
     BRTCreateListenerModel (3, "Reverb_Path");
-    BRTConnectListenerModel ("Listener_0", "Reverb_Path");
+    BRTConnectListenerModel ("Reverb_Path", "Listener_0");
+    BRTCreateEnvironmentModel (0, "FreeFieldEnvironment");
+    BRTConnectEnvironmentModel ("FreeFieldEnvironment", "Direct_Path");
+    BRTConnectSoundSource (std::to_string(instanceId).c_str(), "Direct_Path");
+    BRTConnectSoundSource (std::to_string(instanceId).c_str(), "FreeFieldEnvironment");
+    BRTClearGraph();
     
+    BRTCreateListener ("Listener_0");
+    BRTCreateListenerModel (0, "Direct_Path");
+    BRTConnectListenerModel ("Direct_Path", "Listener_0");
+    BRTCreateListenerModel (3, "Reverb_Path");
+    BRTConnectListenerModel ("Reverb_Path", "Listener_0");
+    BRTCreateEnvironmentModel (0, "FreeFieldEnvironment");
+    BRTConnectEnvironmentModel ("FreeFieldEnvironment", "Direct_Path");
     BRTReconnectAllSoundSources();
+    
     BRTClearGraph();
     BRTSpatializerDestroy();
     BRTSpatializerResetIfNeeded (44100, length);

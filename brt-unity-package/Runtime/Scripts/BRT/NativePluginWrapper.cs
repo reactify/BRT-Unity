@@ -21,15 +21,26 @@ namespace BRT
         [DllImport(DLL_NAME)]
         public static extern bool BRTCreateListener(string listenerId);
         
-        
         [DllImport(DLL_NAME)]
         public static extern bool BRTRemoveListener(string listenerId);
 
         [DllImport(DLL_NAME)]
         public static extern bool BRTCreateListenerModel(int type, string modelName);
+        
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTRemoveListenerModel(string modelName);
 
         [DllImport(DLL_NAME)]
-        public static extern bool BRTConnectListenerModel(string listenerId, string listenerModelId);
+        public static extern bool BRTConnectListenerModel(string listenerModelId, string listenerId);
+        
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTCreateEnvironmentModel(int type, string modelName);
+        
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTRemoveEnvironmentModel(string modelName);
+
+        [DllImport(DLL_NAME)]
+        public static extern bool BRTConnectEnvironmentModel(string environmentModelId, string listenerModelId);
 
         [DllImport(DLL_NAME)]
         public static extern void BRTClearGraph();
@@ -60,26 +71,5 @@ namespace BRT
 
         [DllImport(DLL_NAME)]
         public static extern void BRTReconnectAllSoundSources();
-
-        [DllImport(DLL_NAME)]
-        public static extern bool BRTManagerSetBypassed (bool bypass);
-
-        [DllImport(DLL_NAME)]
-        public static extern bool BRTManagerSetSpatializationEnabled (bool bypass);
-
-        [DllImport(DLL_NAME)]
-        public static extern bool BRTManagerSetInterpolationEnabled (bool bypass);
-
-        [DllImport(DLL_NAME)]
-        public static extern bool BRTManagerSetITDSimulationEnabled (bool bypass);
-
-        [DllImport(DLL_NAME)]
-        public static extern bool BRTManagerSetNearFieldEffectEnabled (bool bypass);
-
-        [DllImport(DLL_NAME)]
-        public static extern bool BRTManagerSetParallaxCorrectionEnabled (bool bypass);
-
-        [DllImport(DLL_NAME)]
-        public static extern  bool BRTManagerSetDistanceAttenuationEnabled (bool bypass);
     }
 }

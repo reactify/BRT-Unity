@@ -56,25 +56,47 @@ public:
     bool removeListenerModel (const char* listenerModelID);
     bool connectListenerModel (const char* listenerModelID, const char* listenerID);
     
-    void clearGraph();
+    template <typename EnvironmentModelType>
+    bool createEnvironmentModel (const char* environmentModelID);
+    bool removeEnvironmentModel (const char* environmentModelID);
+    bool connectEnvironmentModel (const char* environmentModelID, const char* listenerModelID);
+    
+    static void clearGraph();
     
     //==========================================================================
     bool createSoundSource (const char* soundSourceID, bool autoConnect = true);
     bool removeSoundSource (const char* soundSourceID);
-    bool connectSoundSource (const char* soundSourceID, const char* listenerModelID);
+    bool connectSoundSource (std::string soundSourceID, std::string listenerModelID);
+    bool disconnectSoundSource (std::string soundSourceID, std::string listenerModelID);
     void reconnectAllSoundSources()
     {
-        const ScopedSetup guard (*this);
-        
         auto snapshot = SpatializerRegistry::instance().get();
 
         for (const auto& [id, state] : *snapshot)
         {
-            for (auto model : getListenerModels())
+            auto idString = std::to_string (id);
+            
+            if (! brtManager.GetSoundSource (idString))
+                createSoundSource (idString.c_str(), false);
+            
+            for (auto listenerModel : getListenerModels())
             {
-                auto idString = std::to_string (id);
-                model->DisconnectSoundSource (idString);
-                model->ConnectSoundSource (idString);
+                auto listenerModelID = listenerModel->GetModelID();
+                
+                for (auto environmentModel : getEnvironmentModels())
+                {
+                    auto environmentModelID = environmentModel->GetModelID();
+                    
+                    if (environmentModel->GetIDEntryPoint("listenerModelID")->GetData() == listenerModelID)
+                    {
+                        disconnectSoundSource (idString, environmentModelID);
+                        connectSoundSource (idString, environmentModelID);
+                        continue;
+                    }
+                }
+                
+                disconnectSoundSource (idString, listenerModelID);
+                connectSoundSource (idString, listenerModelID);
             }
         };
     }
@@ -110,6 +132,7 @@ private:
     void applyListenerModelParameters (const char* modelId, const ListenerModelParameters* p);
     std::shared_ptr<BRTBase::CListener> getListener() const noexcept;
     std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> getListenerModels();
+    std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> getEnvironmentModels();
 
     // Shared instance
     static std::shared_ptr<BRTLibraryWrapper> brtInstance;
@@ -130,7 +153,19 @@ inline bool BRTLibraryWrapper::createListenerModel (const char* listenerModelId)
 {
     const ScopedSetup guard (*this);
     
-    if (auto listenerModel = brtManager.CreateListenerModel<ListenerModelType> (listenerModelId))
+    if (auto model = brtManager.CreateListenerModel<ListenerModelType> (listenerModelId))
+        return true;
+        
+    return false;
+}
+
+//==============================================================================
+template <typename EnvironmentModelType>
+inline bool BRTLibraryWrapper::createEnvironmentModel (const char* environmentModelId)
+{
+    const ScopedSetup guard (*this);
+    
+    if (auto model = brtManager.CreateEnvironment<EnvironmentModelType> (environmentModelId))
         return true;
         
     return false;

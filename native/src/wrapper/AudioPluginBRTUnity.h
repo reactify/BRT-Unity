@@ -27,7 +27,16 @@ UNITY_AUDIODSP_EXPORT_API
 bool BRTRemoveListenerModel (const char* listenerModelId);
 
 UNITY_AUDIODSP_EXPORT_API
-bool BRTConnectListenerModel (const char* listenerId, const char* listenerModelId);
+bool BRTConnectListenerModel (const char* listenerModelID, const char* listenerID);
+
+UNITY_AUDIODSP_EXPORT_API
+bool BRTCreateEnvironmentModel (int type, const char* environmentModelId);
+
+UNITY_AUDIODSP_EXPORT_API
+bool BRTRemoveEnvironmentModel (const char* environmentModelId);
+
+UNITY_AUDIODSP_EXPORT_API
+bool BRTConnectEnvironmentModel (const char* environmentModelId, const char* listenerModelId);
 
 UNITY_AUDIODSP_EXPORT_API
 void BRTClearGraph();

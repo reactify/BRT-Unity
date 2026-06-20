@@ -48,7 +48,7 @@ bool BRTCreateListenerModel (int type, const char* listenerModelId)
     
     if (brtInstance == nullptr)
     {
-        BRT_Log (2, "[BRTSpatializerCreateListener] No BRTLibrary instance found");
+        BRT_Log (2, "[BRTCreateListenerModel] No BRTLibrary instance found");
         return false;
     }
     
@@ -80,26 +80,68 @@ bool BRTRemoveListenerModel (const char* listenerModelID)
     return false;
 }
 
-bool BRTConnectListenerModel (const char* listenerId, const char* listenerModelId)
+bool BRTConnectListenerModel (const char* listenerModelID, const char* listenerID)
 {
-    BRT_Log (0, "Connecting Listener Model: " +  std::string (listenerModelId) + " to listener: " + std::string (listenerId));
+    BRT_Log (0, "Connecting Listener Model: " +  std::string (listenerModelID) + " to listener: " + std::string (listenerID));
     
     if (auto brtInstance = BRTLibraryWrapper::instance())
-        return brtInstance->connectListenerModel (listenerModelId, listenerId);
+        return brtInstance->connectListenerModel (listenerModelID, listenerID);
     
     BRT_Log (2, "[BRTConnectListenerModel] No BRTLibrary instance found");
+    return false;
+}
+
+bool BRTCreateEnvironmentModel (int type, const char* environmentModelId)
+{
+    BRT_Log (0, "Creating Environment Model: " +  std::string (environmentModelId) + " of type: " + std::to_string (type));
+    
+    auto brtInstance = BRTLibraryWrapper::instance();
+    
+    if (brtInstance == nullptr)
+    {
+        BRT_Log (2, "[BRTCreateEnvironmentModel] No BRTLibrary instance found");
+        return false;
+    }
+    
+    using namespace BRTEnvironmentModel;
+    
+    switch (type)
+    {
+        case 0:
+            return brtInstance->createEnvironmentModel<CFreeFieldEnvironmentModel> (environmentModelId);
+        case 1:
+            return brtInstance->createEnvironmentModel<CSDNEnvironmentModel> (environmentModelId);
+        default:
+            return brtInstance->createEnvironmentModel<CFreeFieldEnvironmentModel> (environmentModelId);
+    }
+}
+
+bool BRTRemoveEnvironmentModel (const char* environmentModelId)
+{
+    BRT_Log (0, "Removing Environment Model: " +  std::string (environmentModelId));
+    
+    if (auto brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->removeEnvironmentModel (environmentModelId);
+    
+    BRT_Log (2, "[BRTRemoveEnvironmentModel] No BRTLibrary instance found");
+    return false;
+}
+
+bool BRTConnectEnvironmentModel (const char* environmentModelId, const char* listenerModelId)
+{
+    BRT_Log (0, "Connecting Environment Model: " +  std::string (environmentModelId) + " to listener model: " + std::string (listenerModelId));
+    
+    if (auto brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->connectEnvironmentModel (environmentModelId, listenerModelId);
+    
+    BRT_Log (2, "[BRTConnectEnvironmentModel] No BRTLibrary instance found");
     return false;
 }
 
 void BRTClearGraph()
 {
     BRT_Log (0, "BRTClearGraph");
-    
-    if (auto brtInstance = BRTLibraryWrapper::instance())
-        return brtInstance->clearGraph();
-    
-    BRT_Log (2, "[BRTClearGraph] No BRTLibrary instance found");
-    return false;
+    BRTLibraryWrapper::clearGraph();
 }
 
 void BRTSetListenerModelParameters (const char* listenerModelId, const BRTUnity::ListenerModelParameters* params)

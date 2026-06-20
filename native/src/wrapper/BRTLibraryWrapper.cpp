@@ -152,7 +152,6 @@ bool BRTLibraryWrapper::removeListener (const char* listenerID)
 bool BRTLibraryWrapper::removeListenerModel (const char* listenerModelID)
 {
     const ScopedSetup guard (*this);
-    
     return brtManager.RemoveListenerModel (listenerModelID);
 }
 
@@ -169,33 +168,63 @@ bool BRTLibraryWrapper::connectListenerModel (const char* listenerModelID, const
         }
         
         BRT_Log (0,"Connected listener model " + std::string (listenerModelID));
-        
         return true;
     }
     
     BRT_Log (2, "BRT: No listener found");
+    return false;
+}
+
+bool BRTLibraryWrapper::removeEnvironmentModel (const char* environmentModelID)
+{
+    const ScopedSetup guard (*this);
+    return brtManager.RemoveEnvironmentModel (environmentModelID);
+}
+
+bool BRTLibraryWrapper::connectEnvironmentModel (const char* environmentModelID, const char* listenerModelID)
+{
+    const ScopedSetup guard (*this);
     
+    if (auto listenerModel = brtManager.GetListenerModel<BRTListenerModel::CListenerModelBase> (listenerModelID))
+    {
+        if (! listenerModel->ConnectEnvironmentModel (environmentModelID))
+        {
+            BRT_Log (2, "BRT: Error connecting environment model");
+            return false;
+        }
+        
+        BRT_Log (0,"Connected environment model " + std::string (environmentModelID) + " to listener model " + std::string (listenerModelID));
+        return true;
+    }
+    
+    BRT_Log (2, "BRT: No listener model " + std::string (listenerModelID) + " found");
     return false;
 }
 
 void BRTLibraryWrapper::clearGraph()
 {
-    const ScopedSetup guard (*this);
+    if (auto brt = instance())
+    {
+        auto localSampleRate = brt->sampleRate;
+        auto localBufferSize = brt->bufferSize;
+        
+        destroy();
+        initOrReplace (localSampleRate, localBufferSize);
+    }
     
-    auto snapshot = SpatializerRegistry::instance().get();
-
-    for (const auto& [id, s] : *snapshot)
-        if (auto source = brtManager.GetSoundSource (std::to_string (id)))
-            for (auto listenerModel : getListenerModels())
-                listenerModel->DisconnectSoundSource (std::to_string (id));
-    
-    for (auto listenerModelID : brtManager.GetListenerModelIDs())
-        brtManager.RemoveListenerModel (listenerModelID);
-    
-    for (auto listenerID : brtManager.GetListenerIDs())
-        brtManager.RemoveListener (listenerID);
-    
-    listener = nullptr;
+//    for (const auto& [id, s] : *snapshot)
+//        if (auto source = brtManager.GetSoundSource (std::to_string (id)))
+//            for (auto listenerModel : getListenerModels())
+//                listenerModel->DisconnectSoundSource (std::to_string (id));
+//    
+//    for (auto environmentModelID : brtManager.GetEnvironmentModelIDs())
+//        brtManager.RemoveEnvironmentModel (environmentModelID);
+//    
+//    for (auto listenerModelID : brtManager.GetListenerModelIDs())
+//        brtManager.RemoveListenerModel (listenerModelID);
+//    
+//    for (auto listenerID : brtManager.GetListenerIDs())
+//        brtManager.RemoveListener (listenerID);
 }
 
 bool BRTLibraryWrapper::createSoundSource (const char* soundSourceId, bool autoConnect)
@@ -224,14 +253,31 @@ bool BRTLibraryWrapper::removeSoundSource (const char* soundSourceId)
     return brtManager.RemoveSoundSource (soundSourceId);
 }
 
-bool BRTLibraryWrapper::connectSoundSource (const char *soundSourceID, const char *listenerModelID)
+bool BRTLibraryWrapper::connectSoundSource (std::string soundSourceID, std::string modelID)
 {
     const ScopedSetup guard (*this);
     
-    if (auto listenerModel = brtManager.GetListenerModel<BRTListenerModel::CListenerModelBase> (listenerModelID))
+    if (auto environmentModel = brtManager.GetEnvironmentModel<BRTEnvironmentModel::CEnviromentModelBase> (modelID))
+        return environmentModel->ConnectSoundSource (soundSourceID);
+    
+    if (auto listenerModel = brtManager.GetListenerModel<BRTListenerModel::CListenerModelBase> (modelID))
         return listenerModel->ConnectSoundSource (soundSourceID);
     
-    BRT_Log (2, "Error connecting sound source " + std::string (soundSourceID) + " to listener model " + std::string (listenerModelID));
+    BRT_Log (2, "Error connecting sound source " + soundSourceID + " to model " + modelID);
+    return false;
+}
+
+bool BRTLibraryWrapper::disconnectSoundSource (std::string soundSourceID, std::string modelID)
+{
+    const ScopedSetup guard (*this);
+    
+    if (auto environmentModel = brtManager.GetEnvironmentModel<BRTEnvironmentModel::CEnviromentModelBase> (modelID))
+        return environmentModel->DisconnectSoundSource (soundSourceID);
+    
+    if (auto listenerModel = brtManager.GetListenerModel<BRTListenerModel::CListenerModelBase> (modelID))
+        return listenerModel->DisconnectSoundSource (soundSourceID);
+    
+    BRT_Log (2, "Error disconnecting sound source " + soundSourceID + " to model " + modelID);
     return false;
 }
 
@@ -389,6 +435,18 @@ std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> BRTLibraryWra
     
     for (auto modelID : brtManager.GetListenerModelIDs())
         models.emplace_back (brtManager.GetListenerModel<ListenerModelBase> (modelID));
+    
+    return models;
+}
+
+std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> BRTLibraryWrapper::getEnvironmentModels()
+{
+    using EnvironmentModelBase = BRTEnvironmentModel::CEnviromentModelBase;
+    
+    std::vector<std::shared_ptr<EnvironmentModelBase>> models;
+    
+    for (auto modelID : brtManager.GetEnvironmentModelIDs())
+        models.emplace_back (brtManager.GetEnvironmentModel<EnvironmentModelBase> (modelID));
     
     return models;
 }

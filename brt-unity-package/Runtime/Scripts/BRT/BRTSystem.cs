@@ -165,16 +165,16 @@ namespace BRT
                       ?? ListenerModelType.DirectHRTFConvolutionModel);
             NativePluginWrapper.BRTCreateListenerModel(listenerModelType, listener.modelID);
             NativePluginWrapper.BRTConnectListenerModel(
-                listener.listenerID,
-                listener.modelID);
+                listener.modelID,
+                listener.listenerID);
 
             listenerModelType =
                 (int)(_activeConfig?.listenerEnvironmentModels?[0].parameters.type 
                       ?? ListenerModelType.DirectBRIRConvolutionModel);
             NativePluginWrapper.BRTCreateListenerModel(listenerModelType, env.modelID);
             NativePluginWrapper.BRTConnectListenerModel(
-                env.listenerID,
-                env.modelID);
+                env.modelID,
+                env.listenerID);
         }
 
         // --------------------------------------------------------------------
