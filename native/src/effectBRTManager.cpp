@@ -14,13 +14,14 @@ namespace BRTManager
 
 	enum Parameter
 	{
-		Wetness = 0,
-		NumParameters = 1
+		P_MIX = 0,
+        P_GAIN = 1,
+		P_NUM = 2,
 	};
 
 	struct EffectData
 	{
-		std::array<float, NumParameters> parameters;
+		std::array<float, P_NUM> params;
         float scaleFactor = 1.0f;
 	};
 
@@ -28,9 +29,7 @@ namespace BRTManager
 	UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK CreateCallback (UnityAudioEffectState* state)
     {
         auto effectdata = new EffectData;
-        effectdata->parameters = {
-            0.5f, // wetness
-        };
+        memset (effectdata, 0, sizeof(EffectData));
         state->effectdata = effectdata;
         
         BRT_Log (0, "CREATE BRT MANAGER");
@@ -54,39 +53,34 @@ namespace BRTManager
 
 	int InternalRegisterEffectDefinition (UnityAudioEffectDefinition& definition)
 	{
-		definition.paramdefs = new UnityAudioParameterDefinition[NumParameters];
-        AudioPluginUtil::RegisterParameter (definition, "Wetness", "", 0.0f, 1.0f, 0.5f,
-                           1.0f, 1.0f, Wetness, "Ratio of reverb to dry audio in output mix");
-		return NumParameters;
+		definition.paramdefs = new UnityAudioParameterDefinition[P_NUM];
+        AudioPluginUtil::RegisterParameter (definition, "Mix", "", 0.0f, 1.0f, 0.5f,
+                           1.0f, 1.0f, P_MIX, "Ratio of spatializer output to dry input audio in output mix");
+        AudioPluginUtil::RegisterParameter (definition, "Gain", "", 0.0f, 1.0f, 1.0f,
+                           1.0f, 1.0f, P_GAIN, "Gain of dry audio in output mix");
+		return P_NUM;
 	}
 
-	UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK
-    SetFloatParameterCallback (UnityAudioEffectState* state, int index, float value)
-	{
-		EffectData* data = state->GetEffectData<EffectData>();
-		
-        if (index < 0 || index >= NumParameters || data == nullptr)
-		{
-			return UNITY_AUDIODSP_ERR_UNSUPPORTED;
-		}
-		
+    UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK SetFloatParameterCallback(UnityAudioEffectState* state, int index, float value)
+    {
+        EffectData* data = state->GetEffectData<EffectData>();
+        if (index >= P_NUM)
+            return UNITY_AUDIODSP_ERR_UNSUPPORTED;
+        data->params[index] = value;
         return UNITY_AUDIODSP_OK;
-	}
+    }
 
-	UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK
-    GetFloatParameterCallback (UnityAudioEffectState* state, int index, float* value, char *valuestr)
-	{
-		EffectData* data = state->GetEffectData<EffectData>();
-        
-		if (index < 0 || index >= NumParameters || data == nullptr)
-		{
-			return UNITY_AUDIODSP_ERR_UNSUPPORTED;
-		}
-		
-		*value = data->parameters[index];
-		
+    UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK GetFloatParameterCallback(UnityAudioEffectState* state, int index, float* value, char *valuestr)
+    {
+        EffectData* data = state->GetEffectData<EffectData>();
+        if (index >= P_NUM)
+            return UNITY_AUDIODSP_ERR_UNSUPPORTED;
+        if (value != NULL)
+            *value = data->params[index];
+        if (valuestr != NULL)
+            valuestr[0] = 0;
         return UNITY_AUDIODSP_OK;
-	}
+    }
 
 	int UNITY_AUDIODSP_CALLBACK
     GetFloatBufferCallback (UnityAudioEffectState* state, const char* name, float* buffer, int numsamples)
@@ -108,6 +102,21 @@ namespace BRTManager
         }
         
         brt->process (inbuffer, outbuffer, length, inchannels, outchannels);
+        
+        EffectData* data = state->GetEffectData<EffectData>();
+        
+        float wet = data->params[P_MIX];
+        float dry  = 1.0f - wet;
+        float gain = data->params[P_GAIN];
+        
+        for (unsigned int i = 0; i < length * outchannels; ++i)
+        {
+            float in  = inbuffer[i];
+            float wetSample = outbuffer[i];
+
+            outbuffer[i] = (dry * in) + (wet * wetSample);
+            outbuffer[i] *= gain;
+        }
 
 		return UNITY_AUDIODSP_OK;
 	}
