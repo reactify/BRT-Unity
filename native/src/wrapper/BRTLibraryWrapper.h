@@ -4,6 +4,7 @@
 #define NOMINMAX
 #include <algorithm>
 #include <cfloat>
+#include <stack>
 #include "BRTLibrary.h"
 #include "Parameters.h"
 #include "SpatializerRegistry.h"

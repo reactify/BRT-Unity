@@ -239,5 +239,4 @@ void BRTReconnectAllSoundSources()
         return brtInstance->reconnectAllSoundSources();
     
     BRT_Log (2, "[BRTReconnectAllSoundSources] No BRTLibrary instance found");
-    return false;
 }

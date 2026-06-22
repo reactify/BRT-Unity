@@ -40,6 +40,8 @@ if(APPLE)
     endif()
 
 elseif(ANDROID)
+    set(CMAKE_ANDROID_STL_TYPE c++_shared)
+
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_UNITY_ANDROID -DUNITY_64")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_UNITY_ANDROID -DUNITY_64")
 
