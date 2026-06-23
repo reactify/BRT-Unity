@@ -372,9 +372,9 @@ void BRTLibraryWrapper::setDirectivityEnabled (const char* soundSourceID, bool e
     BRT_Log (2, "Error setting DirectivityTF. Sound Source " + std::string (soundSourceID) + " not found");
 }
 
-auto setEnabled = [] (auto* obj, bool enabled, auto enableMethod, auto disableMethod) noexcept
+auto setEnabled = [] (auto* obj, int8_t enabled, auto enableMethod, auto disableMethod) noexcept
 {
-    if (enabled)
+    if (enabled > 0)
         (obj->*enableMethod)();
     else
         (obj->*disableMethod)();
@@ -437,6 +437,8 @@ void BRTLibraryWrapper::applyEnvironmentModelParameters (const char* modelId,
                         &BRTBase::CModelBase::EnableModel,
                         &BRTBase::CModelBase::DisableModel);
             
+            environmentModel->SetGain (p->gain);
+            
             setEnabled (environmentModel.get(), p->directPathEnabled,
                         &CEnviromentModelBase::EnableDirectPath,
                         &CEnviromentModelBase::DisableDirectPath);
@@ -445,13 +447,19 @@ void BRTLibraryWrapper::applyEnvironmentModelParameters (const char* modelId,
                         &CEnviromentModelBase::EnableReverbPath,
                         &CEnviromentModelBase::DisableReverbPath);
 
-            setEnabled (environmentModel.get(), p->distanceAttenuationEnabled,
-                        &CEnviromentModelBase::EnableDistanceAttenuation,
-                        &CEnviromentModelBase::DisableDistanceAttenuation);
-
             setEnabled (environmentModel.get(), p->propagationDelayEnabled,
                         &CEnviromentModelBase::EnablePropagationDelay,
                         &CEnviromentModelBase::DisablePropagationDelay);
+            
+            setEnabled (environmentModel.get(), p->distanceAttenuationEnabled,
+                        &CEnviromentModelBase::EnableDistanceAttenuation,
+                        &CEnviromentModelBase::DisableDistanceAttenuation);
+            
+            environmentModel->SetDistanceAttenuationFactor (p->distanceAttenuationFactor);
+            
+            auto room = std::make_shared<BRTServices::CRoom>();
+            room->SetupShoeBox (p->roomLength, p->roomWidth, p->roomHeight);
+            environmentModel->SetRoom (room);
         }
     }
 }

@@ -47,6 +47,9 @@ namespace BRT
         
         [DllImport(DLL_NAME)]
         public static extern void BRTSetListenerModelParameters(string listenerModelId, ref ListenerModelParameters parameters);
+        
+        [DllImport(DLL_NAME)]
+        public static extern void BRTSetEnvironmentModelParameters(string environmentModelId, ref EnvironmentModelParameters parameters);
 
         [DllImport(DLL_NAME)]
         public static extern bool BRTSpatializerLoadHRTF(string filePath);

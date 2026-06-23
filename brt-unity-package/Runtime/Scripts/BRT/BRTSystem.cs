@@ -125,10 +125,11 @@ namespace BRT
 
             Logger.LogInfo($"Applying config: {_activeConfig.name}");
 
-            var listener = _activeConfig.listenerModels?[0];
-            var env = _activeConfig.listenerEnvironmentModels?[0];
+            var listenerModel = _activeConfig.listenerModels?[0];
+            var listenerEnvironmentModel = _activeConfig.listenerEnvironmentModels?[0];
+            var environmentModel = _activeConfig.environmentModel;
 
-            if (listener == null || env == null)
+            if (listenerModel == null || listenerEnvironmentModel == null)
             {
                 Logger.LogError("Invalid configuration");
                 return;
@@ -142,12 +143,13 @@ namespace BRT
             }
 
             // Always safe to update these
-            SetHRTF(listener.HRTFResourceIndex);
-            SetNFC(listener.NFCResourceIndex);
-            SetBRIR(env.BRIRResourceIndex);
+            SetHRTF(listenerModel.HRTFResourceIndex);
+            SetNFC(listenerModel.NFCResourceIndex);
+            SetBRIR(listenerEnvironmentModel.BRIRResourceIndex);
             
-            NativePluginWrapper.BRTSetListenerModelParameters(listener.modelID, ref listener.parameters);
-            NativePluginWrapper.BRTSetListenerModelParameters(env.modelID, ref env.parameters);
+            NativePluginWrapper.BRTSetListenerModelParameters(listenerModel.modelID, ref listenerModel.parameters);
+            NativePluginWrapper.BRTSetListenerModelParameters(listenerEnvironmentModel.modelID, ref listenerEnvironmentModel.parameters);
+            NativePluginWrapper.BRTSetEnvironmentModelParameters(environmentModel.modelID, ref environmentModel.parameters);
 
             NativePluginWrapper.BRTReconnectAllSoundSources();
         }
@@ -185,7 +187,7 @@ namespace BRT
             if (environmentModel != null)
             {
                 var modelType = (int)environmentModel.parameters.type;
-                NativePluginWrapper.BRTCreateEnvironmentModel(modelType, environmentModel.listenerModelID);
+                NativePluginWrapper.BRTCreateEnvironmentModel(modelType, environmentModel.modelID);
                 NativePluginWrapper.BRTConnectEnvironmentModel(environmentModel.modelID, environmentModel.listenerModelID);
             }
         }

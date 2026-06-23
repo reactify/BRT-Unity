@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace BRTUnity
 {
 
@@ -14,13 +16,13 @@ enum class ListenerModelType : int
 struct ListenerModelParameters
 {
     ListenerModelType type;
-    bool enabled = true;
-    bool spatializationEnabled = true;
-    bool interpolationEnabled = true;
-    bool itdSimulationEnabled = true;
-    bool nearFieldEffectEnabled = true;
-    bool parallaxCorrectionEnabled = true;
-    bool distanceAttenuationEnabled = true;
+    int8_t enabled;
+    int8_t spatializationEnabled;
+    int8_t interpolationEnabled;
+    int8_t itdSimulationEnabled;
+    int8_t nearFieldEffectEnabled;
+    int8_t parallaxCorrectionEnabled;
+    int8_t distanceAttenuationEnabled;
 };
 #pragma pack(pop)
 
@@ -35,11 +37,16 @@ enum class EnvironmentModelType : int
 struct EnvironmentModelParameters
 {
     ListenerModelType type;
-    bool enabled = true;
-    bool directPathEnabled = true;
-    bool reverbPathEnabled = true;
-    bool distanceAttenuationEnabled = true;
-    bool propagationDelayEnabled = true;
+    int8_t enabled;
+    float gain;
+    int8_t directPathEnabled;
+    int8_t reverbPathEnabled;
+    int8_t propagationDelayEnabled;
+    int8_t distanceAttenuationEnabled;
+    float distanceAttenuationFactor;
+    float roomLength;
+    float roomWidth;
+    float roomHeight;
 };
 #pragma pack(pop)
 

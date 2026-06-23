@@ -15,10 +15,15 @@ namespace BRT
     {
         public EnvironmentModelType type;
         [MarshalAs(UnmanagedType.I1)] public bool enabled;
+                                      public float gain;
         [MarshalAs(UnmanagedType.I1)] public bool directPathEnabled;
         [MarshalAs(UnmanagedType.I1)] public bool reverbPathEnabled;
-        [MarshalAs(UnmanagedType.I1)] public bool distanceAttenuationEnabled;
         [MarshalAs(UnmanagedType.I1)] public bool propagationDelayEnabled;
+        [MarshalAs(UnmanagedType.I1)] public bool distanceAttenuationEnabled;
+                                      public float distanceAttenuationFactor;
+                                      public float roomLength;
+                                      public float roomWidth;
+                                      public float roomHeight;
         
         public static EnvironmentModelParameters Default()
         {
@@ -26,10 +31,15 @@ namespace BRT
             {
                 type = EnvironmentModelType.FreeFieldEnvironment,
                 enabled = true,
+                gain = 1.0f,
                 directPathEnabled = true,
                 reverbPathEnabled = true,
-                distanceAttenuationEnabled = true,
                 propagationDelayEnabled = true,
+                distanceAttenuationEnabled = true,
+                distanceAttenuationFactor = -6.0206f,
+                roomLength = 1.0f,
+                roomWidth = 1.0f,
+                roomHeight = 1.0f,
             };
         }
     }
