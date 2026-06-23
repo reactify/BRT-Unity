@@ -154,6 +154,16 @@ void BRTSetListenerModelParameters (const char* listenerModelId, const BRTUnity:
     BRT_Log (2, "[BRTSetListenerModelParameters] No BRTLibrary instance found");
 }
 
+void BRTSetEnvironmentModelParameters (const char* environmentModelId, const BRTUnity::EnvironmentModelParameters* params)
+{
+    BRT_Log (0, "BRTSetEnvironmentModelParameters");
+    
+    if (auto brtInstance = BRTLibraryWrapper::instance())
+        return brtInstance->updateEnvironmentModelParameters (environmentModelId, params);
+    
+    BRT_Log (2, "[BRTSetEnvironmentModelParameters] No BRTLibrary instance found");
+}
+
 bool BRTSpatializerLoadHRTF (const char* hrtfFile) // TODO: return index?
 {
     BRT_Log (0, "Loading HRTF " +  std::string (hrtfFile));

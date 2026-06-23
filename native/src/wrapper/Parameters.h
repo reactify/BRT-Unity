@@ -24,4 +24,23 @@ struct ListenerModelParameters
 };
 #pragma pack(pop)
 
+
+enum class EnvironmentModelType : int
+{
+    FreeFieldEnvironment = 0,
+    SDNEnvironment = 1
+};
+
+#pragma pack(push, 1)
+struct EnvironmentModelParameters
+{
+    ListenerModelType type;
+    bool enabled = true;
+    bool directPathEnabled = true;
+    bool reverbPathEnabled = true;
+    bool distanceAttenuationEnabled = true;
+    bool propagationDelayEnabled = true;
+};
+#pragma pack(pop)
+
 } // namespace BRTUnity

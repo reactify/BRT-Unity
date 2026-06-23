@@ -115,6 +115,11 @@ public:
         applyListenerModelParameters (modelId, p);
     }
     
+    void updateEnvironmentModelParameters (const char* modelId, const EnvironmentModelParameters* p)
+    {
+        applyEnvironmentModelParameters (modelId, p);
+    }
+    
     void setListenerTransform (Common::CTransform newTransform)
     {
         if (auto listener = getListener())
@@ -131,6 +136,7 @@ private:
     
     bool isSuspended() const noexcept;
     void applyListenerModelParameters (const char* modelId, const ListenerModelParameters* p);
+    void applyEnvironmentModelParameters (const char* modelId, const EnvironmentModelParameters* p);
     std::shared_ptr<BRTBase::CListener> getListener() const noexcept;
     std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> getListenerModels();
     std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> getEnvironmentModels();

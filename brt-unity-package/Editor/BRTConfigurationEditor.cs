@@ -8,11 +8,13 @@ namespace BRT.Editor
     {
         private SerializedProperty listenerModels;
         private SerializedProperty listenerEnvironmentModels;
+        private SerializedProperty environmentModel;
 
         private void OnEnable()
         {
             listenerModels = serializedObject.FindProperty("listenerModels");
             listenerEnvironmentModels = serializedObject.FindProperty("listenerEnvironmentModels");
+            environmentModel = serializedObject.FindProperty("environmentModel");
 
             BRTResourceCatalog.Ensure();
         }
@@ -43,6 +45,14 @@ namespace BRT.Editor
             {
                 EditorGUILayout.LabelField("Listener Environment Model", EditorStyles.boldLabel);
                 DrawListenerModel(listenerEnvironmentModels.GetArrayElementAtIndex(0));
+            }
+            
+            EditorGUILayout.Space(10);
+            
+            if (environmentModel != null)
+            {
+                EditorGUILayout.LabelField("Environment Model", EditorStyles.boldLabel);
+                DrawListenerModel(environmentModel);
             }
         }
 

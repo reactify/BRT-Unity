@@ -372,18 +372,18 @@ void BRTLibraryWrapper::setDirectivityEnabled (const char* soundSourceID, bool e
     BRT_Log (2, "Error setting DirectivityTF. Sound Source " + std::string (soundSourceID) + " not found");
 }
 
+auto setEnabled = [] (auto* obj, bool enabled, auto enableMethod, auto disableMethod) noexcept
+{
+    if (enabled)
+        (obj->*enableMethod)();
+    else
+        (obj->*disableMethod)();
+};
+
 void BRTLibraryWrapper::applyListenerModelParameters (const char* modelId,
                                                       const ListenerModelParameters* p)
 {
     BRT_Log (0, "applyListenerModelParameters for model " + std::string (modelId));
-    
-    auto setEnabled = [] (auto* obj, bool enabled, auto enableMethod, auto disableMethod) noexcept
-    {
-        if (enabled)
-            (obj->*enableMethod)();
-        else
-            (obj->*disableMethod)();
-    };
     
     for (auto listenerModel : getListenerModels())
     {
@@ -418,6 +418,40 @@ void BRTLibraryWrapper::applyListenerModelParameters (const char* modelId,
             setEnabled (listenerModel.get(), p->distanceAttenuationEnabled,
                         &CListenerModelBase::EnableDistanceAttenuation,
                         &CListenerModelBase::DisableDistanceAttenuation);
+        }
+    }
+}
+
+void BRTLibraryWrapper::applyEnvironmentModelParameters (const char* modelId,
+                                                         const EnvironmentModelParameters* p)
+{
+    BRT_Log (0, "applyEnvironmentModelParameters for model " + std::string (modelId));
+    
+    for (auto environmentModel : getEnvironmentModels())
+    {
+        if (environmentModel->GetModelID() == modelId)
+        {
+            using namespace BRTEnvironmentModel;
+            
+            setEnabled (environmentModel.get(), p->enabled,
+                        &BRTBase::CModelBase::EnableModel,
+                        &BRTBase::CModelBase::DisableModel);
+            
+            setEnabled (environmentModel.get(), p->directPathEnabled,
+                        &CEnviromentModelBase::EnableDirectPath,
+                        &CEnviromentModelBase::DisableDirectPath);
+
+            setEnabled (environmentModel.get(), p->reverbPathEnabled,
+                        &CEnviromentModelBase::EnableReverbPath,
+                        &CEnviromentModelBase::DisableReverbPath);
+
+            setEnabled (environmentModel.get(), p->distanceAttenuationEnabled,
+                        &CEnviromentModelBase::EnableDistanceAttenuation,
+                        &CEnviromentModelBase::DisableDistanceAttenuation);
+
+            setEnabled (environmentModel.get(), p->propagationDelayEnabled,
+                        &CEnviromentModelBase::EnablePropagationDelay,
+                        &CEnviromentModelBase::DisablePropagationDelay);
         }
     }
 }

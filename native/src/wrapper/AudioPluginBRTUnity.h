@@ -45,6 +45,9 @@ UNITY_AUDIODSP_EXPORT_API
 void BRTSetListenerModelParameters (const char* listenerModelId, const BRTUnity::ListenerModelParameters* params);
 
 UNITY_AUDIODSP_EXPORT_API
+void BRTSetEnvironmentModelParameters (const char* environmentModelId, const BRTUnity::EnvironmentModelParameters* params);
+
+UNITY_AUDIODSP_EXPORT_API
 bool BRTSpatializerLoadHRTF (const char* hrtfFile); // TODO: return index?
 
 UNITY_AUDIODSP_EXPORT_API

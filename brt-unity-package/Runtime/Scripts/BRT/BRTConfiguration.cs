@@ -11,6 +11,7 @@ namespace BRT
     {
         [SerializeField] public List<ListenerModel> listenerModels = new();
         [SerializeField] public List<ListenerEnvironmentModel> listenerEnvironmentModels = new();
+        [SerializeField] public EnvironmentModel environmentModel;
 
         private void OnEnable()
         {

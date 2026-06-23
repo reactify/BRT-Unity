@@ -5,8 +5,8 @@ namespace BRT
     [System.Serializable]
     public class ListenerModel
     {
-        public string listenerID;
         public string modelID;
+        public string listenerID;
 
         public int HRTFResourceIndex = -1;
         public int NFCResourceIndex = -1;

@@ -137,7 +137,7 @@ namespace BRT
             // Only create listener once
             if (!_listenerCreated)
             {
-                ApplyListener(listener, env);
+                SetupListenerAndEnvironmentModels();
                 _listenerCreated = true;
             }
 
@@ -156,25 +156,38 @@ namespace BRT
         // Listener setup
         // --------------------------------------------------------------------
 
-        private static void ApplyListener(ListenerModel listener, ListenerEnvironmentModel env)
+        private static void SetupListenerAndEnvironmentModels()
         {
-            NativePluginWrapper.BRTCreateListener(listener.listenerID);
+            var listenerModel = _activeConfig.listenerModels?[0];
+            var listenerEnvironmentModel = _activeConfig.listenerEnvironmentModels?[0];
+            var environmentModel = _activeConfig.environmentModel;
+            
+            NativePluginWrapper.BRTCreateListener(listenerModel.listenerID);
 
-            var listenerModelType =
-                (int)(_activeConfig?.listenerModels?[0].parameters.type 
-                      ?? ListenerModelType.DirectHRTFConvolutionModel);
-            NativePluginWrapper.BRTCreateListenerModel(listenerModelType, listener.modelID);
-            NativePluginWrapper.BRTConnectListenerModel(
-                listener.modelID,
-                listener.listenerID);
+            if (listenerModel != null)
+            {
+                var modelType = (int)listenerModel.parameters.type;
+                NativePluginWrapper.BRTCreateListenerModel(modelType, listenerModel.modelID);
+                NativePluginWrapper.BRTConnectListenerModel(
+                    listenerModel.modelID,
+                    listenerModel.listenerID);
+            }
 
-            listenerModelType =
-                (int)(_activeConfig?.listenerEnvironmentModels?[0].parameters.type 
-                      ?? ListenerModelType.DirectBRIRConvolutionModel);
-            NativePluginWrapper.BRTCreateListenerModel(listenerModelType, env.modelID);
-            NativePluginWrapper.BRTConnectListenerModel(
-                env.modelID,
-                env.listenerID);
+            if (listenerEnvironmentModel != null)
+            {
+                var modelType = (int)listenerEnvironmentModel.parameters.type;
+                NativePluginWrapper.BRTCreateListenerModel(modelType, listenerEnvironmentModel.modelID);
+                NativePluginWrapper.BRTConnectListenerModel(
+                    listenerEnvironmentModel.modelID,
+                    listenerEnvironmentModel.listenerID);
+            }
+
+            if (environmentModel != null)
+            {
+                var modelType = (int)environmentModel.parameters.type;
+                NativePluginWrapper.BRTCreateEnvironmentModel(modelType, environmentModel.listenerModelID);
+                NativePluginWrapper.BRTConnectEnvironmentModel(environmentModel.modelID, environmentModel.listenerModelID);
+            }
         }
 
         // --------------------------------------------------------------------
