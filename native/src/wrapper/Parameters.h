@@ -33,10 +33,19 @@ enum class EnvironmentModelType : int
     SDNEnvironment = 1
 };
 
+constexpr int ENVIRONMENT_MODEL_SHOEBOX_WALL_COUNT = 6;
+constexpr int ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT = 9;
+constexpr int ENVIRONMENT_MODEL_WALL_ABSORPTION_COEFFICIENT_COUNT =
+    ENVIRONMENT_MODEL_SHOEBOX_WALL_COUNT *
+    ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT;
+
+static_assert (ENVIRONMENT_MODEL_WALL_ABSORPTION_COEFFICIENT_COUNT == 54,
+               "EnvironmentModelParameters expects 6 walls x 9 absorption coefficients.");
+
 #pragma pack(push, 1)
 struct EnvironmentModelParameters
 {
-    ListenerModelType type;
+    EnvironmentModelType type;
     int8_t enabled;
     float gain;
     int8_t directPathEnabled;
@@ -47,6 +56,8 @@ struct EnvironmentModelParameters
     float roomLength;
     float roomWidth;
     float roomHeight;
+
+    float wallAbsorptionCoefficients[ENVIRONMENT_MODEL_WALL_ABSORPTION_COEFFICIENT_COUNT];
 };
 #pragma pack(pop)
 

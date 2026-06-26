@@ -14,16 +14,23 @@ namespace BRT
     public struct EnvironmentModelParameters
     {
         public EnvironmentModelType type;
-        [MarshalAs(UnmanagedType.I1)] public bool enabled;
-                                      public float gain;
-        [MarshalAs(UnmanagedType.I1)] public bool directPathEnabled;
-        [MarshalAs(UnmanagedType.I1)] public bool reverbPathEnabled;
-        [MarshalAs(UnmanagedType.I1)] public bool propagationDelayEnabled;
-        [MarshalAs(UnmanagedType.I1)] public bool distanceAttenuationEnabled;
-                                      public float distanceAttenuationFactor;
-                                      public float roomLength;
-                                      public float roomWidth;
-                                      public float roomHeight;
+        [MarshalAs(UnmanagedType.I1)] 
+        public bool enabled;
+        public float gain;
+        [MarshalAs(UnmanagedType.I1)] 
+        public bool directPathEnabled;
+        [MarshalAs(UnmanagedType.I1)] 
+        public bool reverbPathEnabled;
+        [MarshalAs(UnmanagedType.I1)] 
+        public bool propagationDelayEnabled;
+        [MarshalAs(UnmanagedType.I1)] 
+        public bool distanceAttenuationEnabled;
+        public float distanceAttenuationFactor;
+        public float roomLength;
+        public float roomWidth;
+        public float roomHeight; 
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 54)] 
+        public float[] wallAbsorptionCoefficients;
         
         public static EnvironmentModelParameters Default()
         {
@@ -40,6 +47,7 @@ namespace BRT
                 roomLength = 1.0f,
                 roomWidth = 1.0f,
                 roomHeight = 1.0f,
+                wallAbsorptionCoefficients = new float[54],
             };
         }
     }

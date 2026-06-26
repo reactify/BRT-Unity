@@ -459,6 +459,24 @@ void BRTLibraryWrapper::applyEnvironmentModelParameters (const char* modelId,
             
             auto room = std::make_shared<BRTServices::CRoom>();
             room->SetupShoeBox (p->roomLength, p->roomWidth, p->roomHeight);
+
+            for (int wallIndex = 0; wallIndex < ENVIRONMENT_MODEL_SHOEBOX_WALL_COUNT; ++wallIndex)
+            {
+                std::vector<float> absorptionBands;
+                absorptionBands.reserve (ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT);
+
+                for (int coeffIndex = 0; coeffIndex < ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT; ++coeffIndex)
+                {
+                    const int index = wallIndex * ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT + coeffIndex;
+
+                    absorptionBands.push_back (std::clamp (p->wallAbsorptionCoefficients[index],
+                                                           0.0f,
+                                                           1.0f));
+                }
+
+                room->SetWallAbsortion (wallIndex, absorptionBands);
+            }
+
             environmentModel->SetRoom (room);
         }
     }
