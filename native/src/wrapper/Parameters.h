@@ -17,6 +17,7 @@ struct ListenerModelParameters
 {
     ListenerModelType type;
     int8_t enabled;
+    float gain;
     int8_t spatializationEnabled;
     int8_t interpolationEnabled;
     int8_t itdSimulationEnabled;
@@ -29,8 +30,10 @@ struct ListenerModelParameters
 
 enum class EnvironmentModelType : int
 {
-    FreeFieldEnvironment = 0,
-    SDNEnvironment = 1
+    NoEnvironment,
+    FreeFieldEnvironment = 1,
+    SDNEnvironment = 2,
+    ISMEnvironment = 3,
 };
 
 constexpr int ENVIRONMENT_MODEL_SHOEBOX_WALL_COUNT = 6;

@@ -6,6 +6,7 @@
 #include <cfloat>
 #include <stack>
 #include "BRTLibrary.h"
+#include "Logging.h"
 #include "Parameters.h"
 #include "SpatializerRegistry.h"
 #include "IdPool.h"
@@ -72,42 +73,57 @@ public:
     void reconnectAllSoundSources()
     {
         auto snapshot = SpatializerRegistry::instance().get();
-
+        
         for (const auto& [id, state] : *snapshot)
         {
             auto idString = std::to_string (id);
-            
+                
             if (! brtManager.GetSoundSource (idString))
                 createSoundSource (idString.c_str(), false);
             
-            for (auto listenerModel : getListenerModels())
-            {
-                auto listenerModelID = listenerModel->GetModelID();
-                
-                for (auto environmentModel : getEnvironmentModels())
-                {
-                    auto environmentModelID = environmentModel->GetModelID();
-                    
-                    if (environmentModel->GetIDEntryPoint("listenerModelID")->GetData() == listenerModelID)
-                    {
-                        disconnectSoundSource (idString, environmentModelID);
-                        connectSoundSource (idString, environmentModelID);
-                        continue;
-                    }
-                }
-                
-                disconnectSoundSource (idString, listenerModelID);
-                connectSoundSource (idString, listenerModelID);
-            }
+            setDirectivityEnabled (idString, state.enableDirectivity);
+            autoConnectSoundSource (idString);
         };
+    }
+    
+    void autoConnectSoundSource (std::string soundSourceID)
+    {
+        BRT_Log (0, "Attempt to reconnect sound source: " + soundSourceID);
+        
+        for (auto listenerModel : getListenerModels())
+        {
+            auto listenerModelID = listenerModel->GetModelID();
+            
+            bool connectedToEnvironment = false;
+            
+            for (auto environmentModel : getEnvironmentModels())
+            {
+                auto environmentModelID = environmentModel->GetModelID();
+                
+                if (environmentModel->GetIDEntryPoint("listenerModelID")->GetData() == listenerModelID)
+                {
+                    disconnectSoundSource (soundSourceID, environmentModelID);
+                    connectSoundSource (soundSourceID, environmentModelID);
+                    
+                    connectedToEnvironment = true;
+                    break;
+                }
+            }
+            
+            if (connectedToEnvironment)
+                continue;
+            
+            disconnectSoundSource (soundSourceID, listenerModelID);
+            connectSoundSource (soundSourceID, listenerModelID);
+        }
     }
     
     //==========================================================================
     bool setHRTF (const char* hrtfFile);
     bool setNFCFilter (const char* nfcFilterFile);
     bool setBRIR (const char* brirFile);
-    bool setDirectivityTF (const char* soundSourceID, const char* directivityFile);
-    void setDirectivityEnabled (const char* soundSourceID, bool enabled);
+    bool setDirectivityTF (std::string soundSourceID, const char* directivityFile);
+    void setDirectivityEnabled (std::string soundSourceID, bool enabled);
 
     //==========================================================================
     void updateListenerModelParameters (const char* modelId, const ListenerModelParameters* p)

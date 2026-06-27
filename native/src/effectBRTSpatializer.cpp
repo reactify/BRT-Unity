@@ -105,6 +105,8 @@ CreateCallback (UnityAudioEffectState* state)
 UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK
 ReleaseCallback (UnityAudioEffectState* state)
 {
+    BRT_Log (0, "[effectBRTSpatializer] ReleaseCallback");
+    
     if (auto* data = state->GetEffectData<EffectData>())
     {
         auto brt = BRTLibraryWrapper::instance();
@@ -113,6 +115,7 @@ ReleaseCallback (UnityAudioEffectState* state)
         {
             SpatializerRegistry::instance().erase (data->sourceID);
             brt->removeSoundSource (std::to_string (data->sourceID).c_str());
+            BRT_Log (0, "[effectBRTSpatializer] Deleted Spatializer Source " + std::to_string (data->sourceID));
         }
 
         GlobalIdPool::instance().release (data->sourceID);

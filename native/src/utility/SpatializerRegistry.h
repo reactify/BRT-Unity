@@ -6,6 +6,7 @@ struct SpatializerState
     CMonoBuffer<float> buffer;
     Common::CTransform sourceTransform;
     Common::CTransform listenerTransform;
+    bool enableDirectivity = false;
 };
 
 

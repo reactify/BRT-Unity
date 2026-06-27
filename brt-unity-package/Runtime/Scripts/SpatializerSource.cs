@@ -32,7 +32,6 @@ namespace BRT
         private void Start()
         {
             RefreshInstanceId();
-            SetDirectivityIndex(0);
             ApplyDirectivity();
         }
 
@@ -66,6 +65,7 @@ namespace BRT
         private void ApplyDirectivity()
         {
             if (instanceId < 0) return;
+            SetDirectivityIndex(0);
             NativePluginWrapper.BRTSetSourceDirectivityEnabled(instanceId.ToString(), enableDirectivity);
         }
         

@@ -12,6 +12,8 @@ namespace BRTManager
 {
     using namespace BRTUnity;
 
+    static std::atomic<int> g_instanceCount {0};
+
 	enum Parameter
 	{
 		P_MIX = 0,
@@ -32,7 +34,12 @@ namespace BRTManager
         memset (effectdata, 0, sizeof(EffectData));
         state->effectdata = effectdata;
         
-        BRT_Log (0, "CREATE BRT MANAGER");
+        int count = ++g_instanceCount;
+
+       if (count > 1)
+           BRT_Log (1, "WARNING: Multiple BRT MANAGER instances created " + std::to_string (count));
+       else
+           BRT_Log (0, "CREATE BRT MANAGER");
         
         BRTLibraryWrapper::initOrReplace (state->samplerate, state->dspbuffersize);
 
@@ -41,7 +48,9 @@ namespace BRTManager
 
     UNITY_AUDIODSP_RESULT UNITY_AUDIODSP_CALLBACK ReleaseCallback (UnityAudioEffectState* state)
     {
-        BRT_Log (0, "DELETE BRT MANAGER");
+        int count = --g_instanceCount;
+        
+        BRT_Log (0, "DELETE BRT MANAGER (remaining: " + std::to_string (count) + ")");
         
         BRTLibraryWrapper::destroy();
         
@@ -92,6 +101,11 @@ namespace BRTManager
     ProcessCallback (UnityAudioEffectState* state, float* inbuffer, float* outbuffer,
                      unsigned int length, int inchannels, int outchannels)
 	{
+        if (g_instanceCount.load() > 1)
+        {
+            BRT_Log (1, "WARNING: Multiple BRT MANAGER instances active during processing");
+        }
+        
         auto brt = BRTLibraryWrapper::instance();
 
         if (inchannels != 2 || outchannels != 2 ||

@@ -108,9 +108,13 @@ bool BRTCreateEnvironmentModel (int type, const char* environmentModelId)
     switch (type)
     {
         case 0:
-            return brtInstance->createEnvironmentModel<CFreeFieldEnvironmentModel> (environmentModelId);
+            return false;
         case 1:
+            return brtInstance->createEnvironmentModel<CFreeFieldEnvironmentModel> (environmentModelId);
+        case 2:
             return brtInstance->createEnvironmentModel<CSDNEnvironmentModel> (environmentModelId);
+        case 3:
+            return brtInstance->createEnvironmentModel<CISMEnvironmentModel> (environmentModelId);
         default:
             return brtInstance->createEnvironmentModel<CFreeFieldEnvironmentModel> (environmentModelId);
     }

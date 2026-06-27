@@ -1,7 +1,6 @@
 
 #include "BRTLibraryWrapper.h"
 #include "AppUtils.h"
-#include "Logging.h"
 
 namespace BRTUnity
 {
@@ -234,8 +233,7 @@ bool BRTLibraryWrapper::createSoundSource (const char* soundSourceId, bool autoC
     if (auto soundSource = brtManager.CreateSoundSource<BRTSourceModel::CSourceDirectivityModel> (soundSourceId))
     {
         if (autoConnect)
-            for (auto listenerModel : getListenerModels())
-                listenerModel->ConnectSoundSource (soundSourceId);
+            autoConnectSoundSource (soundSourceId);
         
         return true;
     }
@@ -250,12 +248,17 @@ bool BRTLibraryWrapper::removeSoundSource (const char* soundSourceId)
     for (const auto& listenerModel : getListenerModels())
         listenerModel->DisconnectSoundSource (soundSourceId);
     
+    for (const auto& listenerModel : getEnvironmentModels())
+        listenerModel->DisconnectSoundSource (soundSourceId);
+    
     return brtManager.RemoveSoundSource (soundSourceId);
 }
 
 bool BRTLibraryWrapper::connectSoundSource (std::string soundSourceID, std::string modelID)
 {
     const ScopedSetup guard (*this);
+    
+    BRT_Log (0, "Connecting sound source " + soundSourceID + " to model " + modelID);
     
     if (auto environmentModel = brtManager.GetEnvironmentModel<BRTEnvironmentModel::CEnviromentModelBase> (modelID))
         return environmentModel->ConnectSoundSource (soundSourceID);
@@ -338,7 +341,7 @@ bool BRTLibraryWrapper::setBRIR (const char* brirFile)
     return localListener->SetHRBRIR (brir);
 }
 
-bool BRTLibraryWrapper::setDirectivityTF (const char* soundSourceID, const char* directivityFile)
+bool BRTLibraryWrapper::setDirectivityTF (std::string soundSourceID, const char* directivityFile)
 {
     auto soundSource = brtManager.GetSoundSource (soundSourceID);
     
@@ -359,13 +362,21 @@ bool BRTLibraryWrapper::setDirectivityTF (const char* soundSourceID, const char*
     return soundSource->SetDirectivity (directivityTF);
 }
 
-void BRTLibraryWrapper::setDirectivityEnabled (const char* soundSourceID, bool enabled)
+void BRTLibraryWrapper::setDirectivityEnabled (std::string soundSourceID, bool enabled)
 {
-    BRT_Log (0, "Setting DirectivityTF. Sound Source " + std::string (soundSourceID));
+    BRT_Log (0, "Setting DirectivityTF. Sound Source " + soundSourceID);
     
     if (auto soundSource = brtManager.GetSoundSource (soundSourceID))
     {
         soundSource->SetDirectivityEnable (enabled);
+        
+        int index = std::stoi (soundSourceID);
+        
+        auto snapshot = SpatializerRegistry::instance().get();
+        SpatializerState state = snapshot.get()->at (index);
+        state.enableDirectivity = enabled;
+        SpatializerRegistry::instance().set (index, state);
+        
         return;
     }
     
@@ -383,7 +394,18 @@ auto setEnabled = [] (auto* obj, int8_t enabled, auto enableMethod, auto disable
 void BRTLibraryWrapper::applyListenerModelParameters (const char* modelId,
                                                       const ListenerModelParameters* p)
 {
-    BRT_Log (0, "applyListenerModelParameters for model " + std::string (modelId));
+    std::string log =
+            "applyListenerModelParameters model=" + std::string (modelId) +
+            " | enabled=" + std::to_string (p->enabled) +
+            " gain=" + std::to_string (p->gain) +
+            " spatial=" + std::to_string (p->spatializationEnabled) +
+            " interp=" + std::to_string (p->interpolationEnabled) +
+            " itd=" + std::to_string (p->itdSimulationEnabled) +
+            " near=" + std::to_string (p->nearFieldEffectEnabled) +
+            " parallax=" + std::to_string (p->parallaxCorrectionEnabled) +
+            " distance=" + std::to_string (p->distanceAttenuationEnabled);
+
+    BRT_Log (0, log);
     
     for (auto listenerModel : getListenerModels())
     {
@@ -394,6 +416,8 @@ void BRTLibraryWrapper::applyListenerModelParameters (const char* modelId,
             setEnabled (listenerModel.get(), p->enabled,
                         &BRTBase::CModelBase::EnableModel,
                         &BRTBase::CModelBase::DisableModel);
+            
+            listenerModel->SetGain (p->gain);
             
             setEnabled (listenerModel.get(), p->spatializationEnabled,
                         &CListenerModelBase::EnableSpatialization,
@@ -425,7 +449,20 @@ void BRTLibraryWrapper::applyListenerModelParameters (const char* modelId,
 void BRTLibraryWrapper::applyEnvironmentModelParameters (const char* modelId,
                                                          const EnvironmentModelParameters* p)
 {
-    BRT_Log (0, "applyEnvironmentModelParameters for model " + std::string (modelId));
+    std::string log =
+            "applyEnvironmentModelParameters model=" + std::string (modelId) +
+            " | enabled=" + std::to_string (p->enabled) +
+            " gain=" + std::to_string (p->gain) +
+            " direct=" + std::to_string (p->directPathEnabled) +
+            " reverb=" + std::to_string (p->reverbPathEnabled) +
+            " delay=" + std::to_string (p->propagationDelayEnabled) +
+            " distance=" + std::to_string (p->distanceAttenuationEnabled) +
+            " distanceFactor=" + std::to_string (p->distanceAttenuationFactor) +
+            " room=(" + std::to_string (p->roomLength) + "," +
+                         std::to_string (p->roomWidth) + "," +
+                         std::to_string (p->roomHeight) + ")";
+
+    BRT_Log (0, log);
     
     for (auto environmentModel : getEnvironmentModels())
     {
@@ -465,14 +502,22 @@ void BRTLibraryWrapper::applyEnvironmentModelParameters (const char* modelId,
                 std::vector<float> absorptionBands;
                 absorptionBands.reserve (ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT);
 
+                std::string wallLog = "  wall " + std::to_string (wallIndex) + " bands=";
+
                 for (int coeffIndex = 0; coeffIndex < ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT; ++coeffIndex)
                 {
                     const int index = wallIndex * ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT + coeffIndex;
 
-                    absorptionBands.push_back (std::clamp (p->wallAbsorptionCoefficients[index],
-                                                           0.0f,
-                                                           1.0f));
+                    float v = std::clamp (p->wallAbsorptionCoefficients[index], 0.0f, 1.0f);
+                    absorptionBands.push_back (v);
+
+                    wallLog += std::to_string (v);
+
+                    if (coeffIndex < ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT - 1)
+                        wallLog += ",";
                 }
+
+                BRT_Log (0, wallLog);
 
                 room->SetWallAbsortion (wallIndex, absorptionBands);
             }

@@ -180,9 +180,10 @@ namespace BRT.Editor
             if (EditorGUI.EndChangeCheck())
             {
                 _runtimeEditor.serializedObject.ApplyModifiedProperties();
-                
-                BRTSystem.ReapplyRuntimeConfig();
 
+                BRTSystem.SetConfig(active, true);
+
+                SyncToActiveConfig();
                 Repaint();
             }
         }

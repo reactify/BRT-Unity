@@ -17,6 +17,7 @@ namespace BRT
     {
         public ListenerModelType type;
         [MarshalAs(UnmanagedType.I1)] public bool enabled;
+                                      public float gain;
         [MarshalAs(UnmanagedType.I1)] public bool spatializationEnabled;
         [MarshalAs(UnmanagedType.I1)] public bool interpolationEnabled;
         [MarshalAs(UnmanagedType.I1)] public bool itdSimulationEnabled;
@@ -30,6 +31,7 @@ namespace BRT
             {
                 type = ListenerModelType.DirectBRIRConvolutionModel,
                 enabled = true,
+                gain = 1.0f,
                 spatializationEnabled = true,
                 interpolationEnabled = true,
                 itdSimulationEnabled = true,

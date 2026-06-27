@@ -5,7 +5,6 @@ namespace BRT
 
     public static class BRTSystem
     {
-        private static bool _initialized;
         private static bool _listenerCreated;
 
         private static BRTConfiguration _activeConfig;
@@ -20,9 +19,6 @@ namespace BRT
 
         public static void Initialize(BRTConfiguration config = null)
         {
-            if (_initialized)
-                return;
-
             if (!IsSpatializerActive())
             {
                 Logger.LogWarning("Spatializer not active, skipping initialization");
@@ -30,39 +26,19 @@ namespace BRT
             }
 
             Logger.LogInfo("BRT.System.Initialize()");
-            _initialized = true;
-
-            AudioSettings.GetDSPBufferSize(out _dspBufferSize, out _);
-
-            NativePluginWrapper.BRTSpatializerResetIfNeeded(
-                AudioSettings.outputSampleRate,
-                _dspBufferSize
-            );
-            
-            Logger.LogInfo("BRT intialised with sample rate: " + AudioSettings.outputSampleRate + " and buffer size: " + _dspBufferSize);
 
             BRTResourceCatalog.Rebuild();
-
-            // If editor already selected a config, use it
-            if (_activeConfig != null)
-            {
-                ApplyRuntimeConfig();
-                return;
-            }
-
+            
             // Otherwise load default
             config ??= Resources.Load<BRTConfiguration>("BRTDefault");
-            SetConfig(config, reset: false);
+            SetConfig(config, reset: true);
         }
 
         public static void Shutdown()
         {
-            if (!_initialized)
-                return;
-
             Logger.LogInfo("BRT.System.Shutdown()");
 
-            NativePluginWrapper.BRTSpatializerDestroy();
+            // NativePluginWrapper.BRTSpatializerDestroy();
 
             ClearState();
         }
@@ -86,16 +62,16 @@ namespace BRT
             _activeConfig.name = config.name;
 
             // If not running yet, stop here
-            if (!_initialized)
-                return;
+            // if (!_initialized)
+            //     return;
 
             if (reset)
             {
-                NativePluginWrapper.BRTSpatializerResetIfNeeded(
-                    AudioSettings.outputSampleRate,
-                    _dspBufferSize
-                );
-                
+                // NativePluginWrapper.BRTSpatializerResetIfNeeded(
+                //     AudioSettings.outputSampleRate,
+                //     _dspBufferSize
+                // );
+                //
                 NativePluginWrapper.BRTClearGraph();
                 _listenerCreated = false;
             }
@@ -106,16 +82,7 @@ namespace BRT
         // --------------------------------------------------------------------
         // Runtime application
         // --------------------------------------------------------------------
-
-        public static void ReapplyRuntimeConfig()
-        {
-            if (!_initialized || _activeConfig == null)
-                return;
-
-            ApplyRuntimeConfig();
-        }
-
-        private static void ApplyRuntimeConfig()
+        public static void ApplyRuntimeConfig()
         {
             if (_activeConfig == null)
             {
@@ -274,7 +241,6 @@ namespace BRT
 
         private static void ClearState()
         {
-            _initialized = false;
             _listenerCreated = false;
         }
 

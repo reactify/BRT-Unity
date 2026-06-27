@@ -37,7 +37,6 @@ AudioMixerGroupController:
   m_Send: 00000000000000000000000000000000
   m_Effects:
   - {fileID: 24400002}
-  - {fileID: 3601462340665049924}
   m_UserColorIndex: 0
   m_Mute: 0
   m_Solo: 0
@@ -270,19 +269,3 @@ AudioMixerSnapshotController:
     4bc479ff96250054bad361801f1a2277: 50
     4f806aff3f5ea5c4bb660a7a64b4b9b5: 21
   m_TransitionOverrides: {}
---- !u!244 &3601462340665049924
-AudioMixerEffectController:
-  m_ObjectHideFlags: 3
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_EffectID: 4f20d933b727e4cdaaf709b5cc0d6124
-  m_EffectName: BRT Manager
-  m_MixLevel: 80c100183ee17467e8926b4dc2aedcf5
-  m_Parameters:
-  - m_ParameterName: Wetness
-    m_GUID: 052509544a67240cf8c4a5400d1f3d08
-  m_SendTarget: {fileID: 0}
-  m_EnableWetMix: 0
-  m_Bypass: 0

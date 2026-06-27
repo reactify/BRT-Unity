@@ -5,8 +5,10 @@ namespace BRT
 {
     public enum EnvironmentModelType : int
     {
-        FreeFieldEnvironment = 0,
-        SDNEnvironment = 1,
+        NoEnvironment = 0,
+        FreeFieldEnvironment = 1,
+        SDNEnvironment = 2,
+        ISMEnvironment = 3,
     }
     
     [System.Serializable]
@@ -36,7 +38,7 @@ namespace BRT
         {
             return new EnvironmentModelParameters
             {
-                type = EnvironmentModelType.FreeFieldEnvironment,
+                type = EnvironmentModelType.NoEnvironment,
                 enabled = true,
                 gain = 1.0f,
                 directPathEnabled = true,
