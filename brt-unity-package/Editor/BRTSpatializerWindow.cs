@@ -11,6 +11,7 @@ namespace BRT.Editor
         private BRTConfiguration _sourcePreset;
 
         private UnityEditor.Editor _runtimeEditor;
+        private Vector2 _scrollPosition;
 
         // --------------------------------------------------------------------
         // Window
@@ -53,6 +54,8 @@ namespace BRT.Editor
 
         private void OnGUI()
         {
+            _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
+            
             EditorGUILayout.Space(5);
             EditorGUILayout.LabelField("BRT Spatializer", EditorStyles.boldLabel);
 
@@ -85,6 +88,8 @@ namespace BRT.Editor
                 LoadPresets();
                 SyncToActiveConfig();
             }
+            
+            EditorGUILayout.EndScrollView();
         }
 
         // --------------------------------------------------------------------
