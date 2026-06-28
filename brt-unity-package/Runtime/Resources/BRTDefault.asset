@@ -20,6 +20,7 @@ MonoBehaviour:
     parameters:
       type: 1
       enabled: 1
+      gain: 0.5
       spatializationEnabled: 1
       interpolationEnabled: 1
       itdSimulationEnabled: 1
@@ -33,6 +34,7 @@ MonoBehaviour:
     parameters:
       type: 3
       enabled: 1
+      gain: 1
       spatializationEnabled: 1
       interpolationEnabled: 1
       itdSimulationEnabled: 1
@@ -45,3 +47,67 @@ MonoBehaviour:
     parameters:
       type: 0
       enabled: 1
+      gain: 1
+      directPathEnabled: 1
+      reverbPathEnabled: 1
+      propagationDelayEnabled: 1
+      distanceAttenuationEnabled: 1
+      distanceAttenuationFactor: -6.0206
+      roomLength: 1
+      roomWidth: 1
+      roomHeight: 1
+      wallAbsorptionCoefficients:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
