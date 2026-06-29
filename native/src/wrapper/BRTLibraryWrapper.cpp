@@ -494,10 +494,10 @@ void BRTLibraryWrapper::applyEnvironmentModelParameters (const char* modelId,
             
             environmentModel->SetDistanceAttenuationFactor (p->distanceAttenuationFactor);
             
-            if (auto room = std::make_shared<BRTServices::CRoom>())
+            if (auto room = environmentModel->GetRoom())
             {
-                BRT_Log (0, "Applying room parameters");
-                // room->SetupShoeBox (p->roomLength, p->roomWidth, p->roomHeight);
+                BRT_Log (0, "Setting Room Dimenstions");
+                room->SetupShoeBox (p->roomLength, p->roomWidth, p->roomHeight);
                 
                 for (int wallIndex = 0; wallIndex < ENVIRONMENT_MODEL_SHOEBOX_WALL_COUNT; ++wallIndex)
                 {
@@ -523,9 +523,9 @@ void BRTLibraryWrapper::applyEnvironmentModelParameters (const char* modelId,
                     
                     room->SetWallAbsortion (wallIndex, absorptionBands);
                 }
+                
+                environmentModel->SetRoom (room);
             }
-
-            // environmentModel->SetRoom (room);
         }
     }
 }
