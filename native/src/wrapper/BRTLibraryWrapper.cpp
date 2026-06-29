@@ -494,35 +494,38 @@ void BRTLibraryWrapper::applyEnvironmentModelParameters (const char* modelId,
             
             environmentModel->SetDistanceAttenuationFactor (p->distanceAttenuationFactor);
             
-            auto room = std::make_shared<BRTServices::CRoom>();
-            room->SetupShoeBox (p->roomLength, p->roomWidth, p->roomHeight);
-
-            for (int wallIndex = 0; wallIndex < ENVIRONMENT_MODEL_SHOEBOX_WALL_COUNT; ++wallIndex)
+            if (auto room = std::make_shared<BRTServices::CRoom>())
             {
-                std::vector<float> absorptionBands;
-                absorptionBands.reserve (ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT);
-
-                std::string wallLog = "  wall " + std::to_string (wallIndex) + " bands=";
-
-                for (int coeffIndex = 0; coeffIndex < ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT; ++coeffIndex)
+                BRT_Log (0, "Applying room parameters");
+                // room->SetupShoeBox (p->roomLength, p->roomWidth, p->roomHeight);
+                
+                for (int wallIndex = 0; wallIndex < ENVIRONMENT_MODEL_SHOEBOX_WALL_COUNT; ++wallIndex)
                 {
-                    const int index = wallIndex * ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT + coeffIndex;
-
-                    float v = std::clamp (p->wallAbsorptionCoefficients[index], 0.0f, 1.0f);
-                    absorptionBands.push_back (v);
-
-                    wallLog += std::to_string (v);
-
-                    if (coeffIndex < ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT - 1)
-                        wallLog += ",";
+                    std::vector<float> absorptionBands;
+                    absorptionBands.reserve (ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT);
+                    
+                    std::string wallLog = "  wall " + std::to_string (wallIndex) + " bands=";
+                    
+                    for (int coeffIndex = 0; coeffIndex < ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT; ++coeffIndex)
+                    {
+                        const int index = wallIndex * ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT + coeffIndex;
+                        
+                        float v = std::clamp (p->wallAbsorptionCoefficients[index], 0.0f, 1.0f);
+                        absorptionBands.push_back (v);
+                        
+                        wallLog += std::to_string (v);
+                        
+                        if (coeffIndex < ENVIRONMENT_MODEL_WALL_ABSORPTION_BAND_COUNT - 1)
+                            wallLog += ",";
+                    }
+                    
+                    BRT_Log (0, wallLog);
+                    
+                    room->SetWallAbsortion (wallIndex, absorptionBands);
                 }
-
-                BRT_Log (0, wallLog);
-
-                room->SetWallAbsortion (wallIndex, absorptionBands);
             }
 
-            environmentModel->SetRoom (room);
+            // environmentModel->SetRoom (room);
         }
     }
 }
