@@ -1,0 +1,113 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ead9c0dd5aed840eaa70928f842b6964, type: 3}
+  m_Name: BRTSDNRoom
+  m_EditorClassIdentifier: 
+  listenerModels:
+  - modelID: Direct_Path
+    listenerID: Listener_0
+    HRTFResourceIndex: 4
+    NFCResourceIndex: 5
+    parameters:
+      type: 1
+      enabled: 1
+      gain: 0.5
+      spatializationEnabled: 1
+      interpolationEnabled: 1
+      itdSimulationEnabled: 1
+      nearFieldEffectEnabled: 1
+      parallaxCorrectionEnabled: 1
+      distanceAttenuationEnabled: 1
+  listenerEnvironmentModels:
+  - modelID: Reverb_Path
+    listenerID: Listener_0
+    BRIRResourceIndex: 10
+    parameters:
+      type: 3
+      enabled: 0
+      gain: 1
+      spatializationEnabled: 1
+      interpolationEnabled: 1
+      itdSimulationEnabled: 1
+      nearFieldEffectEnabled: 1
+      parallaxCorrectionEnabled: 1
+      distanceAttenuationEnabled: 1
+  environmentModel:
+    modelID: Environment
+    listenerModelID: Direct_Path
+    parameters:
+      type: 0
+      enabled: 1
+      gain: 1
+      directPathEnabled: 1
+      reverbPathEnabled: 1
+      propagationDelayEnabled: 1
+      distanceAttenuationEnabled: 1
+      distanceAttenuationFactor: -6.0206
+      roomLength: 1
+      roomWidth: 1
+      roomHeight: 1
+      wallAbsorptionCoefficients:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
