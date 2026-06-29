@@ -90,11 +90,11 @@ public:
     {
         BRT_Log (0, "Attempt to reconnect sound source: " + soundSourceID);
         
+        bool connectedToEnvironment = false;
+        
         for (auto listenerModel : getListenerModels())
         {
             auto listenerModelID = listenerModel->GetModelID();
-            
-            bool connectedToEnvironment = false;
             
             for (auto environmentModel : getEnvironmentModels())
             {
