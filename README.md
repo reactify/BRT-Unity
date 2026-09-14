@@ -1,6 +1,6 @@
 # BRT Unity
 
-BRT Unity is a Unity wrapper for the **Binaural Rendering Toolbox (BRT)**.
+BRT Unity is a Unity wrapper for the **[Binaural Rendering Toolbox](https://grupodiana.github.io/BRT-Documentation) (BRT)**.
 
 It exposes BRT functionality to Unity through a standard Unity package interface, allowing BRT-based binaural rendering to be used from Unity projects.
 
