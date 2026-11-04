@@ -13,9 +13,15 @@ on:
       - ".gitmodules"
       - ".github/workflows/build-native.yml"
   workflow_dispatch:
+    inputs:
+      open_pr:
+        description: Open a PR that updates the binaries in brt-unity-package
+        type: boolean
+        default: true
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Keep manual runs separate so a push doesn't cancel a binaries-update run.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -54,10 +60,11 @@ jobs:
           codesign --verify --deep --strict brt-unity-package/Runtime/Plugins/osx/AudioPluginBRTUnity.bundle
 
       # Zip with ditto so the .bundle folder, executable bit and signature survive
-      # (upload-artifact does not preserve file permissions).
+      # (upload-artifact does not preserve file permissions). Exclude extended
+      # attributes so no AppleDouble ._* files end up in the archive.
       - name: Package bundle
         run: |
-          ditto -c -k --keepParent \
+          ditto -c -k --norsrc --noextattr --noqtn --keepParent \
             brt-unity-package/Runtime/Plugins/osx/AudioPluginBRTUnity.bundle \
             AudioPluginBRTUnity-macos.zip
 
@@ -166,3 +173,64 @@ jobs:
           name: AudioPluginBRTUnity-ios-arm64
           path: brt-unity-package/Runtime/Plugins/iOS/libAudioPluginBRTUnity.a
           if-no-files-found: error
+
+  update-package:
+    name: Open PR with updated binaries
+    if: github.event_name == 'workflow_dispatch' && inputs.open_pr
+    needs: [macos, windows, android, ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/artifacts
+
+      - name: Copy binaries into package
+        env:
+          ART: ${{ runner.temp }}/artifacts
+          PLUGINS: brt-unity-package/Runtime/Plugins
+        run: |
+          # macOS: replace the whole bundle (its .meta lives next to it and is kept)
+          rm -rf "$PLUGINS/osx/AudioPluginBRTUnity.bundle"
+          unzip -q "$ART/AudioPluginBRTUnity-macos/AudioPluginBRTUnity-macos.zip" -d "$PLUGINS/osx"
+
+          cp "$ART/AudioPluginBRTUnity-windows-x86_64/AudioPluginBRTUnity.dll" "$PLUGINS/x86_64/"
+
+          cp "$ART/AudioPluginBRTUnity-android-arm64-v8a/libAudioPluginBRTUnity.so" "$PLUGINS/Android/arm64-v8a/"
+          chmod +x "$PLUGINS/Android/arm64-v8a/libAudioPluginBRTUnity.so"  # tracked as 100755
+
+          cp "$ART/AudioPluginBRTUnity-ios-arm64/libAudioPluginBRTUnity.a" "$PLUGINS/iOS/"
+
+          git status --short
+          # Only binaries should change; .meta files must stay untouched.
+          if git status --porcelain | grep '\.meta$'; then
+            echo "::error::.meta files changed"; exit 1
+          fi
+
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: ci/update-plugin-binaries
+          base: ${{ github.ref_name }}
+          add-paths: brt-unity-package/Runtime/Plugins
+          commit-message: |
+            chore: update native plugin binaries
+
+            Built by ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            from ${{ github.sha }}.
+          title: Update native plugin binaries (${{ github.ref_name }})
+          body: |
+            Native plugin binaries rebuilt by CI from ${{ github.sha }} ([workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})).
+
+            | Platform | File |
+            |---|---|
+            | macOS (universal) | `osx/AudioPluginBRTUnity.bundle` |
+            | Windows (x86_64) | `x86_64/AudioPluginBRTUnity.dll` |
+            | Android (arm64-v8a) | `Android/arm64-v8a/libAudioPluginBRTUnity.so` |
+            | iOS (arm64) | `iOS/libAudioPluginBRTUnity.a` |
+
+            Test in Unity before merging. Re-running the workflow updates this PR.
+          delete-branch: true
