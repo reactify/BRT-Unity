@@ -1,0 +1,91 @@
+name: Build native plugin
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "native/**"
+      - ".gitmodules"
+      - ".github/workflows/build-native.yml"
+  pull_request:
+    paths:
+      - "native/**"
+      - ".gitmodules"
+      - ".github/workflows/build-native.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  macos:
+    name: macOS (universal)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        run: >
+          cmake -S native -B native/build-ci
+          -G Xcode
+          -DBUILD_DESKTOP_HOST=OFF
+
+      - name: Build
+        run: cmake --build native/build-ci --config ${{ env.BUILD_TYPE }} --parallel
+
+      - name: Ad-hoc sign bundle
+        run: codesign --force --deep --sign - brt-unity-package/Runtime/Plugins/osx/AudioPluginBRTUnity.bundle
+
+      - name: Verify bundle
+        run: |
+          BIN=brt-unity-package/Runtime/Plugins/osx/AudioPluginBRTUnity.bundle/Contents/MacOS/AudioPluginBRTUnity
+          lipo -info "$BIN"
+          for arch in x86_64 arm64; do lipo "$BIN" -verify_arch "$arch"; done
+          codesign --verify --deep --strict brt-unity-package/Runtime/Plugins/osx/AudioPluginBRTUnity.bundle
+
+      # Zip with ditto so the .bundle folder, executable bit and signature survive
+      # (upload-artifact does not preserve file permissions).
+      - name: Package bundle
+        run: |
+          ditto -c -k --keepParent \
+            brt-unity-package/Runtime/Plugins/osx/AudioPluginBRTUnity.bundle \
+            AudioPluginBRTUnity-macos.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AudioPluginBRTUnity-macos
+          path: AudioPluginBRTUnity-macos.zip
+          if-no-files-found: error
+
+  windows:
+    name: Windows (x86_64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        run: >
+          cmake -S native -B native/build-ci
+          -A x64
+          -DBUILD_DESKTOP_HOST=OFF
+
+      - name: Build
+        run: cmake --build native/build-ci --config ${{ env.BUILD_TYPE }} --parallel
+
+      - name: Verify DLL
+        shell: bash
+        run: test -f brt-unity-package/Runtime/Plugins/x86_64/AudioPluginBRTUnity.dll
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AudioPluginBRTUnity-windows-x86_64
+          path: brt-unity-package/Runtime/Plugins/x86_64/AudioPluginBRTUnity.dll
+          if-no-files-found: error
