@@ -20,6 +20,10 @@ concurrency:
 
 env:
   BUILD_TYPE: Release
+  # Matches the NDK bundled with Unity 6000.3 (r27c).
+  ANDROID_NDK_VERSION: 27.2.12479018
+  # rapidobj uses aligned_alloc, which bionic only declares from API 28.
+  ANDROID_PLATFORM: android-28
 
 jobs:
   macos:
@@ -88,4 +92,72 @@ jobs:
         with:
           name: AudioPluginBRTUnity-windows-x86_64
           path: brt-unity-package/Runtime/Plugins/x86_64/AudioPluginBRTUnity.dll
+          if-no-files-found: error
+
+  android:
+    name: Android (arm64-v8a)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Android NDK
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;${ANDROID_NDK_VERSION}" > /dev/null
+          echo "NDK_ROOT=$ANDROID_HOME/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
+
+      - name: Configure
+        run: >
+          cmake -S native -B native/build-ci
+          -DCMAKE_TOOLCHAIN_FILE=$NDK_ROOT/build/cmake/android.toolchain.cmake
+          -DANDROID_ABI=arm64-v8a
+          -DANDROID_PLATFORM=${{ env.ANDROID_PLATFORM }}
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build
+        run: cmake --build native/build-ci --parallel
+
+      - name: Verify .so
+        run: |
+          SO=brt-unity-package/Runtime/Plugins/Android/arm64-v8a/libAudioPluginBRTUnity.so
+          BIN="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          file "$SO"
+          "$BIN/llvm-readelf" -d "$SO" | grep NEEDED
+          "$BIN/llvm-nm" -D --defined-only "$SO" | grep UnityGetAudioEffectDefinitions
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AudioPluginBRTUnity-android-arm64-v8a
+          path: brt-unity-package/Runtime/Plugins/Android/arm64-v8a/libAudioPluginBRTUnity.so
+          if-no-files-found: error
+
+  ios:
+    name: iOS (arm64)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        run: >
+          cmake -S native -B native/build-ci
+          -DCMAKE_SYSTEM_NAME=iOS
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build
+        run: cmake --build native/build-ci --parallel
+
+      - name: Verify static library
+        run: |
+          LIB=brt-unity-package/Runtime/Plugins/iOS/libAudioPluginBRTUnity.a
+          lipo -info "$LIB"
+          lipo "$LIB" -verify_arch arm64
+          nm "$LIB" 2>/dev/null | grep ' T _UnityGetAudioEffectDefinitions'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AudioPluginBRTUnity-ios-arm64
+          path: brt-unity-package/Runtime/Plugins/iOS/libAudioPluginBRTUnity.a
           if-no-files-found: error

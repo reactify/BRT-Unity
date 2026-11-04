@@ -1,7 +1,7 @@
 # Android Build Command
 # cmake -DCMAKE_TOOLCHAIN_FILE=/Applications/Unity/Hub/Editor/6000.0.44f1/PlaybackEngines/AndroidPlayer/NDK/build/cmake/android.toolchain.cmake \
 #       -DANDROID_ABI=arm64-v8a \
-#       -DANDROID_PLATFORM=android-21 \
+#       -DANDROID_PLATFORM=android-28 \
 #       -B build -DCMAKE_BUILD_TYPE=Release
 
 cmake_minimum_required(VERSION 3.15)
