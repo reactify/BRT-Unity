@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>BuildMachineOSBuild</key>
-	<string>25D2140</string>
+	<string>25G83</string>
 	<key>CFBundleIdentifier</key>
 	<string>co.uk.reactify.brt-unity</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -11,7 +11,7 @@
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.9.0</string>
+	<string>0.9.1</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleSupportedPlatforms</key>
@@ -37,6 +37,6 @@
 	<key>DTXcodeBuild</key>
 	<string>17F113</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>26.3</string>
+	<string>12.0</string>
 </dict>
 </plist>
