@@ -30,7 +30,12 @@ if(APPLE)
         set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "" FORCE)
         set(CMAKE_OSX_DEPLOYMENT_TARGET "18.0" CACHE STRING "" FORCE)
     else()
-        set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum macOS deployment version")
+        # project() has already created this cache entry (empty), so a plain
+        # set(... CACHE) would be ignored and the build would target the build
+        # machine's macOS version. Only apply the default if none was given.
+        if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+            set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Minimum macOS deployment version" FORCE)
+        endif()
         set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "" FORCE)
 
         configure_file(

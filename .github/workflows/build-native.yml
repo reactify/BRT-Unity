@@ -58,6 +58,14 @@ jobs:
           lipo -info "$BIN"
           for arch in x86_64 arm64; do lipo "$BIN" -verify_arch "$arch"; done
           codesign --verify --deep --strict brt-unity-package/Runtime/Plugins/osx/AudioPluginBRTUnity.bundle
+          # The binary must target the configured minimum macOS, not the runner's.
+          EXPECTED=$(sed -nE 's/^CMAKE_OSX_DEPLOYMENT_TARGET:[A-Z]+=//p' native/build-ci/CMakeCache.txt)
+          echo "Expected minimum macOS: ${EXPECTED:-<unset>}"
+          [[ -n "$EXPECTED" ]] || { echo "::error::CMAKE_OSX_DEPLOYMENT_TARGET is not set"; exit 1; }
+          for minos in $(vtool -show-build "$BIN" | awk '$1 == "minos" { print $2 }'); do
+            echo "minos $minos"
+            [[ "$minos" == "$EXPECTED" ]] || { echo "::error::Bundle targets macOS $minos, expected $EXPECTED"; exit 1; }
+          done
 
       # Zip with ditto so the .bundle folder, executable bit and signature survive
       # (upload-artifact does not preserve file permissions). Exclude extended
