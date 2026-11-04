@@ -1,0 +1,102 @@
+name: Release
+
+# Push a tag like v0.9.1 on main to publish a GitHub Release.
+# Releases ship the binaries already committed in brt-unity-package (the ones
+# tested in Unity via the binaries PR); nothing is rebuilt here.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Check versions and publish release
+    runs-on: ubuntu-latest
+    env:
+      PACKAGE_DIR: brt-unity-package
+      PLUGINS: brt-unity-package/Runtime/Plugins
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # needed to check that the tag is on main
+
+      - name: Check versions
+        run: |
+          TAG="$GITHUB_REF_NAME"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '$TAG' is not of the form vMAJOR.MINOR.PATCH[-prerelease]"; exit 1
+          fi
+          VERSION="${TAG#v}"   # e.g. 1.2.3-rc.1
+          BASE="${VERSION%%-*}" # e.g. 1.2.3 (CMake/plist versions have no pre-release suffix)
+
+          PKG=$(jq -r .version "$PACKAGE_DIR/package.json")
+          CMAKE=$(sed -nE 's/^set\(PLUGIN_VERSION_(MAJOR|MINOR|PATCH) ([0-9]+)\)/\2/p' native/CMakeLists.txt | paste -sd. -)
+          PLIST=$(python3 -c 'import plistlib,sys; print(plistlib.load(open(sys.argv[1],"rb"))["CFBundleShortVersionString"])' \
+            "$PLUGINS/osx/AudioPluginBRTUnity.bundle/Contents/Info.plist")
+
+          echo "tag:                       $VERSION"
+          echo "package.json:              $PKG"
+          echo "CMakeLists PLUGIN_VERSION: $CMAKE"
+          echo "macOS bundle Info.plist:   $PLIST"
+
+          fail=0
+          [[ "$PKG" == "$VERSION" ]] || { echo "::error file=$PACKAGE_DIR/package.json::package.json version $PKG != tag $VERSION"; fail=1; }
+          [[ "$CMAKE" == "$BASE" ]]  || { echo "::error file=native/CMakeLists.txt::PLUGIN_VERSION $CMAKE != tag $BASE"; fail=1; }
+          [[ "$PLIST" == "$BASE" ]]  || { echo "::error::Committed macOS bundle is version $PLIST, expected $BASE. Rebuild the binaries (run the build workflow with open_pr) after bumping the version."; fail=1; }
+
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag $TAG ($GITHUB_SHA) is not on main"; fail=1
+          fi
+          exit $fail
+
+      - name: Export version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "PACKAGE_NAME=$(jq -r .name "$PACKAGE_DIR/package.json")" >> "$GITHUB_ENV"
+          [[ "$VERSION" == *-* ]] && echo "PRERELEASE=--prerelease" >> "$GITHUB_ENV" || true
+
+      - name: Package release assets
+        run: |
+          DIST="$RUNNER_TEMP/dist"
+          mkdir -p "$DIST" "$RUNNER_TEMP/upm"
+          echo "DIST=$DIST" >> "$GITHUB_ENV"
+
+          # Unity Package Manager tarball ("Add package from tarball..."): contents under package/
+          cp -R "$PACKAGE_DIR" "$RUNNER_TEMP/upm/package"
+          tar -czf "$DIST/$PACKAGE_NAME-$VERSION.tgz" -C "$RUNNER_TEMP/upm" package
+
+          # Per-platform native plugins
+          (cd "$PLUGINS/osx" && zip -qry "$DIST/AudioPluginBRTUnity-$VERSION-macos.zip" AudioPluginBRTUnity.bundle)
+          cp "$PLUGINS/x86_64/AudioPluginBRTUnity.dll" "$DIST/AudioPluginBRTUnity-$VERSION-windows-x86_64.dll"
+          cp "$PLUGINS/Android/arm64-v8a/libAudioPluginBRTUnity.so" "$DIST/libAudioPluginBRTUnity-$VERSION-android-arm64-v8a.so"
+          zip -qj "$DIST/AudioPluginBRTUnity-$VERSION-ios-arm64.zip" \
+            "$PLUGINS/iOS/libAudioPluginBRTUnity.a" "$PLUGINS/iOS/libmysofa.a"
+
+          ls -l "$DIST"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > "$RUNNER_TEMP/notes.md" <<EOF
+          ## Install
+
+          In Unity: **Window > Package Manager > + > Add package from git URL...**
+
+          \`\`\`text
+          ${{ github.server_url }}/${{ github.repository }}.git?path=/$PACKAGE_DIR#$GITHUB_REF_NAME
+          \`\`\`
+
+          Or download \`$PACKAGE_NAME-$VERSION.tgz\` below and use **Add package from tarball...**
+
+          EOF
+          gh release create "$GITHUB_REF_NAME" "$DIST"/* \
+            --verify-tag \
+            --title "BRT Unity $VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --generate-notes \
+            $PRERELEASE
