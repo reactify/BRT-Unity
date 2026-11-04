@@ -212,6 +212,12 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
         z
     )
 
+    # 16 KB page alignment, required by Google Play for apps targeting Android 15+.
+    # (Set on the target: CMAKE_SHARED_LINKER_FLAGS does not apply to MODULE libraries.)
+    target_link_options(AudioPluginBRTUnity PRIVATE
+        "-Wl,-z,max-page-size=16384"
+    )
+
     add_custom_command(TARGET AudioPluginBRTUnity POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PLUGIN_OUTPUT_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy

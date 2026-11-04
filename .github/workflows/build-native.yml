@@ -125,6 +125,11 @@ jobs:
           file "$SO"
           "$BIN/llvm-readelf" -d "$SO" | grep NEEDED
           "$BIN/llvm-nm" -D --defined-only "$SO" | grep UnityGetAudioEffectDefinitions
+          # Google Play requires 16 KB-aligned LOAD segments (Android 15+).
+          for align in $("$BIN/llvm-readelf" -lW "$SO" | awk '$1 == "LOAD" { print $NF }'); do
+            echo "LOAD align $align"
+            if (( align < 0x4000 )); then echo "::error::LOAD segment not 16 KB aligned"; exit 1; fi
+          done
 
       - uses: actions/upload-artifact@v4
         with:
